@@ -12,7 +12,7 @@
       ]
     }
   },
-  "postCreateCommand": "pip install -r requirements.txt; npm install --prefix Season-3/; npm install --prefix Season-4/; cd Season-4 && npm link",
+  "postCreateCommand": "pip install -r requirements.txt; npm install --prefix Season-3/; npm install --prefix Season-4/; ln -sf $(pwd)/Season-4/bin/prodbot.js /usr/local/bin/prodbot",
   "features": {
     "ghcr.io/devcontainers/features/python:1.7.1": {},
     "ghcr.io/devcontainers/features/node:1": {}
