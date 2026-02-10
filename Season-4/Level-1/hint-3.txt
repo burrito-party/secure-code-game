@@ -11,20 +11,19 @@ Look at the path traversal regex again:
 It matches ".." when preceded by: start of line, whitespace, or "/"
 It matches ".." when followed by: "/", end of line, or whitespace
 
-But what about the "=" character? What if ".." comes after "="?
+But what about other characters before ".."? The regex only checks
+for a specific set. What if ".." appeared after a character that
+isn't in that set?
 
-In bash, you can store a value in a variable:
-  D=..
+Think about how bash assigns variables:
+  MYVAR=somevalue
 
-The validator sees "D=.." — the ".." is preceded by "=", which is
-NOT in the regex's character set. So the regex doesn't match!
+What character comes right before the value in an assignment?
 
-Later in the same command, bash expands $D back to ".."
+Now ask yourself:
+  → Would the regex catch ".." if it appeared in a variable assignment?
+  → If not, could you store ".." in a variable and use it later?
+  → How does bash expand variables like $MYVAR in a command?
 
-Can you construct a command that:
-  1. Stores ".." in a variable
-  2. Uses that variable to build a path to ../password.txt
-  3. Reads the file?
-
-Remember: bash lets you chain commands with "&&":
-  D=.. && cat $D/password.txt
+Remember: bash lets you chain commands with "&&" to run multiple
+things in sequence on the same line.
