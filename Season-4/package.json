@@ -10,6 +10,5 @@
     "openai": "^4.87.3"
   },
   "scripts": {
-    "chat:Level-1": "node Level-1/code.spec.js"
   }
 }
