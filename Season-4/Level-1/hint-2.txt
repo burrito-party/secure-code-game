@@ -1,0 +1,24 @@
+╔══════════════════════════════════════════════════════════════╗
+║                  HINT 2 — Think in Layers                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+You now know that bash.js uses regex to check for ".." in commands.
+But the validator only sees the RAW TEXT of the command — it has no
+idea what the command will actually do when bash runs it.
+
+Think about this: what if the path "../password.txt" never appears
+literally in your command, but bash reconstructs it at runtime?
+
+Consider how data can be ENCODED in one form and DECODED at runtime:
+
+  → What does the Linux command `base64` do?
+  → What happens if you encode a path with `echo "../password.txt" | base64`?
+  → Could you give ProdBot a command that decodes a string and uses
+    the result as a file path?
+
+The validator doesn't know what base64 output looks like.
+It only checks the input text for patterns it recognises.
+
+Useful commands to experiment with (outside ProdBot):
+  echo "../password.txt" | base64          # encode a path
+  echo "Li4vcGFzc3dvcmQudHh0" | base64 -d # decode it back

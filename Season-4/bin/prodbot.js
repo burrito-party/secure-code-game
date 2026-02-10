@@ -31,6 +31,10 @@ import { validateCommand, executeCommand } from "../lib/bash.js";
 
 const VERSION = "1.1.0";
 
+// The flag that players must extract from password.txt via sandbox escape.
+// When this appears in command output, the player has completed Level 1.
+const FLAG = "BYPA55ED";
+
 /**
  * Resolve the sandbox directory relative to this script's location.
  * import.meta.url gives us the file:// URL of the current module,
@@ -74,6 +78,46 @@ function showWelcome() {
     console.log(line(w("ProdBot uses AI, so always check for mistakes.")));
     console.log(line(w("Sandbox: " + chalk.gray("Level-1/prodbot-activities/"))));
     console.log(bot);
+    console.log();
+}
+
+/**
+ * Displays the Level 1 completion banner when a player successfully
+ * extracts the flag from password.txt via a sandbox escape.
+ */
+function showCongrats() {
+    const g = chalk.green;
+    const y = chalk.yellow;
+    const c = chalk.cyan;
+    const w = chalk.white;
+    const m = chalk.magenta;
+
+    console.log();
+    console.log(g("  ╔══════════════════════════════════════════════════════════╗"));
+    console.log(g("  ║") + y("  🏆  LEVEL 1 COMPLETE — PATH TRAVERSAL SANDBOX ESCAPE  ") + g("║"));
+    console.log(g("  ╠══════════════════════════════════════════════════════════╣"));
+    console.log(g("  ║                                                          ║"));
+    console.log(g("  ║") + c("     ██████╗  █████╗ ███████╗███████╗██╗") + g("                 ║"));
+    console.log(g("  ║") + c("     ██╔══██╗██╔══██╗██╔════╝██╔════╝██║") + g("                 ║"));
+    console.log(g("  ║") + c("     ██████╔╝███████║███████╗███████╗██║") + g("                 ║"));
+    console.log(g("  ║") + c("     ██╔═══╝ ██╔══██║╚════██║╚════██║╚═╝") + g("                 ║"));
+    console.log(g("  ║") + c("     ██║     ██║  ██║███████║███████║██╗") + g("                 ║"));
+    console.log(g("  ║") + c("     ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝") + g("                 ║"));
+    console.log(g("  ║                                                          ║"));
+    console.log(g("  ║") + w("  You bypassed the sandbox validator and read the flag.   ") + g("║"));
+    console.log(g("  ║") + w("  Flag: ") + y("BYPA55ED") + w("                                          ") + g("║"));
+    console.log(g("  ║                                                          ║"));
+    console.log(g("  ║") + m("  Lesson: Denylist regex on shell commands is brittle.    ") + g("║"));
+    console.log(g("  ║") + m("  Bash expands variables and decodes data at runtime,    ") + g("║"));
+    console.log(g("  ║") + m("  after validation — meaning static text checks can      ") + g("║"));
+    console.log(g("  ║") + m("  always be bypassed.                                    ") + g("║"));
+    console.log(g("  ║                                                          ║"));
+    console.log(g("  ║") + w("  Secure alternatives:                                   ") + g("║"));
+    console.log(g("  ║") + w("    1. Restricted command sets (no full shell access)     ") + g("║"));
+    console.log(g("  ║") + w("    2. Validate resolved paths after expansion            ") + g("║"));
+    console.log(g("  ║") + w("    3. OS-level sandboxing (chroot, containers, seccomp)  ") + g("║"));
+    console.log(g("  ║                                                          ║"));
+    console.log(g("  ╚══════════════════════════════════════════════════════════╝"));
     console.log();
 }
 
@@ -177,6 +221,13 @@ async function handleInput(input, rl) {
                         console.log(chalk.white("  " + res.output.trim().split("\n").join("\n  ")));
                     }
                     console.log(chalk.green("  ✅ Done."));
+
+                    // Check if the command output contains the Level 1 flag.
+                    // This means the player successfully escaped the sandbox
+                    // and read the password.txt file.
+                    if (res.output && res.output.includes(FLAG)) {
+                        showCongrats();
+                    }
                 } else {
                     console.log(chalk.red(`  ❌ ${res.error}`));
                 }

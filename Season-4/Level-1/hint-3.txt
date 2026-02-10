@@ -1,0 +1,29 @@
+╔══════════════════════════════════════════════════════════════╗
+║              HINT 3 — Variables Hide Everything             ║
+╚══════════════════════════════════════════════════════════════╝
+
+There's another approach that doesn't even need encoding.
+
+Look at the path traversal regex again:
+  /(?:^|\s|\/)\.\.(\/|$|\s)/
+
+It matches ".." when preceded by: start of line, whitespace, or "/"
+It matches ".." when followed by: "/", end of line, or whitespace
+
+But what about the "=" character? What if ".." comes after "="?
+
+In bash, you can store a value in a variable:
+  D=..
+
+The validator sees "D=.." — the ".." is preceded by "=", which is
+NOT in the regex's character set. So the regex doesn't match!
+
+Later in the same command, bash expands $D back to ".."
+
+Can you construct a command that:
+  1. Stores ".." in a variable
+  2. Uses that variable to build a path to ../password.txt
+  3. Reads the file?
+
+Remember: bash lets you chain commands with "&&":
+  D=.. && cat $D/password.txt
