@@ -2,7 +2,8 @@
 ║              HINT 3 — Variables Hide Everything             ║
 ╚══════════════════════════════════════════════════════════════╝
 
-There's another approach that doesn't even need encoding.
+If the previous hint didn't work for you, here's a completely
+different approach that doesn't need any encoding at all.
 
 Look at the path traversal regex again:
   /(?:^|\s|\/)\.\.(\/|$|\s)/

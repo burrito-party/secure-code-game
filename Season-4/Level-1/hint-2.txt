@@ -9,6 +9,11 @@ idea what the command will actually do when bash runs it.
 Think about this: what if the path "../password.txt" never appears
 literally in your command, but bash reconstructs it at runtime?
 
+──────────────────────────────────────────────────────────────
+If the above isn't enough to get you there, here's a more
+concrete direction to explore:
+──────────────────────────────────────────────────────────────
+
 Consider how data can be ENCODED in one form and DECODED at runtime:
 
   → What does the Linux command `base64` do?
