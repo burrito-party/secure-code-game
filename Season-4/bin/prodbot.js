@@ -34,7 +34,7 @@ import fs from "node:fs";
 import chalk from "chalk";
 import { showBanner } from "../lib/banner.js";
 import { sendToAI } from "../lib/ai.js";
-import { validateCommand, executeCommand } from "../lib/bash.js";
+import { validateCommand, PersistentShell } from "../lib/bash.js";
 
 const VERSION = "1.1.0";
 
@@ -59,6 +59,10 @@ const SANDBOX_DIR = path.resolve(
 if (!fs.existsSync(SANDBOX_DIR)) {
     fs.mkdirSync(SANDBOX_DIR, { recursive: true });
 }
+
+// Create a persistent shell instance — one long-lived bash process that
+// retains state (variables, cwd) between commands, like a real terminal.
+const shell = new PersistentShell(SANDBOX_DIR);
 
 /**
  * Displays the welcome box when ProdBot starts.
@@ -228,8 +232,8 @@ async function handleInput(input, rl) {
                     continue;
                 }
 
-                // Step 3: Execute inside the sandbox
-                const res = executeCommand(cmd, SANDBOX_DIR);
+                // Step 3: Execute inside the persistent shell
+                const res = await shell.executeCommand(cmd);
                 if (res.success) {
                     if (res.output && res.output.trim()) {
                         console.log(chalk.white("  " + res.output.trim().split("\n").join("\n  ")));
@@ -285,6 +289,7 @@ async function main() {
         rl.question(chalk.hex("#20C20E")("❯ "), async (answer) => {
             if (answer.trim().toLowerCase() === "exit") {
                 console.log(chalk.hex("#FF00FF")("  👋 Goodbye!"));
+                shell.destroy();
                 rl.close();
                 return;
             }

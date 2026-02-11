@@ -1,24 +1,27 @@
 /**
- * bash.js — Sandboxed bash command validator and executor.
+ * bash.js — Sandboxed bash command validator and persistent shell executor.
  *
  * This module is the security layer of ProdBot. Before any command runs,
  * it passes through two checks:
  *   1. A denylist of dangerous command patterns (regex-based)
  *   2. Path validation to prevent escaping the sandbox directory
  *
- * Commands that pass validation are executed via Node's child_process.execSync
- * with the working directory (`cwd`) locked to the sandbox folder. This means
- * a command like `touch foo.txt` creates the file inside the sandbox, not
- * wherever the user launched ProdBot from.
+ * Commands are executed inside a persistent bash shell process. This means
+ * that shell state (variables, working directory) persists between commands,
+ * just like a real terminal. The shell's working directory is locked to the
+ * sandbox folder on startup.
+ *
+ * A unique marker is echoed after each command. ProdBot reads stdout until
+ * it sees the marker, then returns everything before it as the command output.
  *
  * Key security concepts demonstrated:
  *   - Denylist filtering: blocking known-dangerous patterns
  *   - Path confinement: preventing directory traversal attacks
  *   - Execution sandboxing: restricting where commands run via `cwd`
- *   - Timeout enforcement: preventing commands from hanging forever
+ *   - Persistent shell: state survives across commands (like a real terminal)
  */
 
-import { execSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import path from "node:path";
 import chalk from "chalk";
 
@@ -37,6 +40,7 @@ const DENIED_PATTERNS = [
     /\bdd\b/,                                          // low-level disk operations
     /\bcurl\b.*\|\s*(ba)?sh/,                          // downloading and piping to shell
     /\bwget\b.*\|\s*(ba)?sh/,                          // same as above with wget
+    /\bexec\b/,                                        // replacing the shell process
 ];
 
 /**
@@ -77,33 +81,105 @@ export function validateCommand(cmd, sandboxDir) {
 }
 
 /**
- * Executes a bash command inside the sandbox directory.
+ * PersistentShell — A long-lived bash process that retains state between commands.
  *
- * The command is first validated, then run with:
- *   - cwd: set to sandboxDir so relative paths resolve inside the sandbox
- *   - timeout: 10 seconds to prevent hanging commands
- *   - stdio: piped so we can capture stdout and stderr
+ * Instead of spawning a new process per command (execSync), we keep a single
+ * bash process running. Commands are written to its stdin, and we read stdout
+ * until a unique marker appears, signaling the end of that command's output.
  *
- * @param {string} cmd - The bash command to execute
- * @param {string} sandboxDir - The absolute path to the sandbox directory
- * @returns {{ success: boolean, output?: string, error?: string }}
+ * This means variables, aliases, and working directory changes persist across
+ * commands — just like a real terminal session.
  */
-export function executeCommand(cmd, sandboxDir) {
-    const validation = validateCommand(cmd, sandboxDir);
-    if (!validation.valid) {
-        return { success: false, error: validation.reason };
+export class PersistentShell {
+    constructor(sandboxDir) {
+        this.sandboxDir = sandboxDir;
+        this.shell = null;
+        this._spawn();
     }
 
-    try {
-        const stdout = execSync(cmd, {
-            cwd: sandboxDir,
-            encoding: "utf-8",
-            timeout: 10000,
+    /** Spawn (or respawn) the bash process with cwd locked to the sandbox. */
+    _spawn() {
+        this.shell = spawn("bash", ["--norc", "--noprofile"], {
+            cwd: this.sandboxDir,
+            env: { ...process.env, PS1: "", PS2: "" },
             stdio: ["pipe", "pipe", "pipe"],
         });
-        return { success: true, output: stdout };
-    } catch (err) {
-        const stderr = err.stderr || err.message || String(err);
-        return { success: false, error: stderr };
+
+        // If the shell exits unexpectedly, mark it as dead so we can respawn
+        this.shell.on("exit", () => {
+            this.shell = null;
+        });
+    }
+
+    /**
+     * Execute a command in the persistent shell.
+     *
+     * How it works:
+     *   1. Generate a unique marker string
+     *   2. Write the command to stdin, followed by `echo <marker>`
+     *   3. Read stdout until the marker appears
+     *   4. Return everything before the marker as the output
+     *
+     * The marker acts as a delimiter — without it, we'd have no way to know
+     * when the command's output ends and the shell is ready for the next one.
+     *
+     * @param {string} cmd - The bash command to execute
+     * @returns {Promise<{ success: boolean, output?: string, error?: string }>}
+     */
+    executeCommand(cmd) {
+        const validation = validateCommand(cmd, this.sandboxDir);
+        if (!validation.valid) {
+            return Promise.resolve({ success: false, error: validation.reason });
+        }
+
+        // Respawn if the shell died
+        if (!this.shell) {
+            this._spawn();
+        }
+
+        return new Promise((resolve) => {
+            const marker = `__PRODBOT_${Date.now()}_${Math.floor(Math.random() * 1e9)}__`;
+            let stdout = "";
+            let stderr = "";
+
+            const onStdout = (chunk) => {
+                stdout += chunk.toString();
+                // Check if the marker has appeared in the output
+                if (stdout.includes(marker)) {
+                    cleanup();
+                    // Everything before the marker is the command's output
+                    const output = stdout.split(marker)[0];
+                    if (stderr.trim()) {
+                        resolve({ success: true, output: output + stderr });
+                    } else {
+                        resolve({ success: true, output });
+                    }
+                }
+            };
+
+            const onStderr = (chunk) => {
+                stderr += chunk.toString();
+            };
+
+            const cleanup = () => {
+                this.shell.stdout.off("data", onStdout);
+                this.shell.stderr.off("data", onStderr);
+            };
+
+            this.shell.stdout.on("data", onStdout);
+            this.shell.stderr.on("data", onStderr);
+
+            // Write the command, then echo the marker on a new line.
+            // The marker tells us where this command's output ends.
+            this.shell.stdin.write(`${cmd}\necho ${marker}\n`);
+        });
+    }
+
+    /** Clean up the shell process when ProdBot exits. */
+    destroy() {
+        if (this.shell) {
+            this.shell.kill();
+            this.shell = null;
+        }
     }
 }
