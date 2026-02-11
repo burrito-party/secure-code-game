@@ -67,7 +67,7 @@ if (!fs.existsSync(SANDBOX_DIR)) {
  */
 function showWelcome() {
     const m = chalk.hex("#FF00FF");
-    const g = chalk.greenBright;
+    const g = chalk.hex("#20C20E");
     const w = chalk.white;
 
     const width = 60;
@@ -93,7 +93,7 @@ function showWelcome() {
  * extracts the flag from password.txt via a sandbox escape.
  */
 function showCongrats() {
-    const g = chalk.greenBright;
+    const g = chalk.hex("#20C20E");
     const y = chalk.yellowBright;
     const c = chalk.cyanBright;
     const w = chalk.white;
@@ -234,7 +234,7 @@ async function handleInput(input, rl) {
                     if (res.output && res.output.trim()) {
                         console.log(chalk.white("  " + res.output.trim().split("\n").join("\n  ")));
                     }
-                    console.log(chalk.greenBright("  ✅ Done."));
+                    console.log(chalk.hex("#20C20E")("  ✅ Done."));
 
                     // Check if the command output contains the Level 1 flag.
                     // This means the player successfully escaped the sandbox
@@ -282,7 +282,7 @@ async function main() {
 
     // Recursive prompt loop — each call waits for input, processes it, then loops
     const prompt = () => {
-        rl.question(chalk.greenBright("❯ "), async (answer) => {
+        rl.question(chalk.hex("#20C20E")("❯ "), async (answer) => {
             if (answer.trim().toLowerCase() === "exit") {
                 console.log(chalk.hex("#FF00FF")("  👋 Goodbye!"));
                 rl.close();

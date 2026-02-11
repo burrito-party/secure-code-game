@@ -3,7 +3,7 @@ import chalk from "chalk";
 export function showBanner() {
     const cyan = chalk.cyanBright;
     const magenta = chalk.hex("#FF00FF");
-    const green = chalk.greenBright;
+    const green = chalk.hex("#20C20E");
     const white = chalk.whiteBright;
 
     const art = `
