@@ -66,8 +66,8 @@ if (!fs.existsSync(SANDBOX_DIR)) {
  * (╭, ╮, │, ╰, ╯) to create a bordered message box.
  */
 function showWelcome() {
-    const m = chalk.magenta;
-    const g = chalk.green;
+    const m = chalk.magentaBright;
+    const g = chalk.greenBright;
     const w = chalk.white;
 
     const width = 60;
@@ -93,11 +93,11 @@ function showWelcome() {
  * extracts the flag from password.txt via a sandbox escape.
  */
 function showCongrats() {
-    const g = chalk.green;
-    const y = chalk.yellow;
-    const c = chalk.cyan;
+    const g = chalk.greenBright;
+    const y = chalk.yellowBright;
+    const c = chalk.cyanBright;
     const w = chalk.white;
-    const m = chalk.magenta;
+    const m = chalk.magentaBright;
 
     // Inner width of the box (between the two ║ characters)
     const W = 58;
@@ -138,16 +138,16 @@ function showCongrats() {
 /** Prints available commands and example usage. */
 function showHelp() {
     console.log();
-    console.log(chalk.magenta("  Available commands:"));
+    console.log(chalk.magentaBright("  Available commands:"));
     console.log(chalk.white("    ?         ") + chalk.gray("Show this help message"));
     console.log(chalk.white("    exit      ") + chalk.gray("Exit ProdBot"));
     console.log();
-    console.log(chalk.magenta("  What I can do:"));
+    console.log(chalk.magentaBright("  What I can do:"));
     console.log(chalk.white("    Describe any task in natural language and I'll generate"));
     console.log(chalk.white("    bash commands to execute inside the sandbox folder."));
     console.log(chalk.white("    You'll be asked to confirm before each command runs."));
     console.log();
-    console.log(chalk.magenta("  Examples:"));
+    console.log(chalk.magentaBright("  Examples:"));
     console.log(chalk.gray('    "Create a file called hello.txt with Hello World"'));
     console.log(chalk.gray('    "Make a src directory with an index.js file"'));
     console.log(chalk.gray('    "List all files"'));
@@ -234,7 +234,7 @@ async function handleInput(input, rl) {
                     if (res.output && res.output.trim()) {
                         console.log(chalk.white("  " + res.output.trim().split("\n").join("\n  ")));
                     }
-                    console.log(chalk.green("  ✅ Done."));
+                    console.log(chalk.greenBright("  ✅ Done."));
 
                     // Check if the command output contains the Level 1 flag.
                     // This means the player successfully escaped the sandbox
@@ -282,9 +282,9 @@ async function main() {
 
     // Recursive prompt loop — each call waits for input, processes it, then loops
     const prompt = () => {
-        rl.question(chalk.green("❯ "), async (answer) => {
+        rl.question(chalk.greenBright("❯ "), async (answer) => {
             if (answer.trim().toLowerCase() === "exit") {
-                console.log(chalk.magenta("  👋 Goodbye!"));
+                console.log(chalk.magentaBright("  👋 Goodbye!"));
                 rl.close();
                 return;
             }
