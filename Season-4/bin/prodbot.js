@@ -92,53 +92,6 @@ function showWelcome() {
     console.log();
 }
 
-/**
- * Displays the Level 1 completion banner when a player successfully
- * extracts the flag from password.txt via a sandbox escape.
- */
-function showCongrats() {
-    const g = chalk.hex("#20C20E");
-    const y = chalk.yellowBright;
-    const c = chalk.cyanBright;
-    const w = chalk.white;
-    const m = chalk.hex("#FF00FF");
-
-    // Inner width of the box (between the two ║ characters)
-    const W = 58;
-    const bar = "═".repeat(W);
-    const blank = " ".repeat(W);
-    // Pad a plain string to W visible columns
-    const pad = (s) => s + " ".repeat(Math.max(0, W - s.length));
-
-    console.log();
-    console.log(g("  ╔" + bar + "╗"));
-    console.log(g("  ║") + y(pad("  LEVEL 1 COMPLETE - PATH TRAVERSAL SANDBOX ESCAPE   ")) + g("║"));
-    console.log(g("  ╠" + bar + "╣"));
-    console.log(g("  ║" + blank + "║"));
-    console.log(g("  ║") + c(pad("     ██████╗  █████╗ ███████╗███████╗██╗")) + g("║"));
-    console.log(g("  ║") + c(pad("     ██╔══██╗██╔══██╗██╔════╝██╔════╝██║")) + g("║"));
-    console.log(g("  ║") + c(pad("     ██████╔╝███████║███████╗███████╗██║")) + g("║"));
-    console.log(g("  ║") + c(pad("     ██╔═══╝ ██╔══██║╚════██║╚════██║╚═╝")) + g("║"));
-    console.log(g("  ║") + c(pad("     ██║     ██║  ██║███████║███████║██╗")) + g("║"));
-    console.log(g("  ║") + c(pad("     ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝")) + g("║"));
-    console.log(g("  ║" + blank + "║"));
-    console.log(g("  ║") + w(pad("  You bypassed the sandbox validator and read the flag.")) + g("║"));
-    console.log(g("  ║") + w("  Flag: ") + y("BYPA55ED") + w(" ".repeat(W - 16)) + g("║"));
-    console.log(g("  ║" + blank + "║"));
-    console.log(g("  ║") + m(pad("  Lesson: Denylist regex on shell commands is brittle.")) + g("║"));
-    console.log(g("  ║") + m(pad("  Bash expands variables and decodes data at runtime,")) + g("║"));
-    console.log(g("  ║") + m(pad("  after validation - meaning static text checks can")) + g("║"));
-    console.log(g("  ║") + m(pad("  always be bypassed.")) + g("║"));
-    console.log(g("  ║" + blank + "║"));
-    console.log(g("  ║") + w(pad("  Secure alternatives:")) + g("║"));
-    console.log(g("  ║") + w(pad("    1. Restricted command sets (no full shell access)")) + g("║"));
-    console.log(g("  ║") + w(pad("    2. Validate resolved paths after expansion")) + g("║"));
-    console.log(g("  ║") + w(pad("    3. OS-level sandboxing (chroot, containers, seccomp)")) + g("║"));
-    console.log(g("  ║" + blank + "║"));
-    console.log(g("  ╚" + bar + "╝"));
-    console.log();
-}
-
 /** Prints available commands and example usage. */
 function showHelp() {
     console.log();
@@ -259,6 +212,54 @@ async function handleInput(input, rl) {
             // Fallback for unexpected response formats from the AI
             console.log(chalk.cyanBright("  🤖 " + JSON.stringify(result)));
     }
+}
+
+/**
+ * Displays the Level 1 completion banner when a player successfully
+ * extracts the flag from password.txt via a sandbox escape.
+ */
+function showCongrats() {
+    const g = chalk.hex("#20C20E");
+    const y = chalk.yellowBright;
+    const c = chalk.cyanBright;
+    const w = chalk.white;
+    const m = chalk.hex("#FF00FF");
+
+    const W = 58;
+    const bar = "═".repeat(W);
+    const blank = " ".repeat(W);
+    const pad = (s) => s + " ".repeat(Math.max(0, W - s.length));
+
+    console.log();
+    console.log(g("  ╔" + bar + "╗"));
+    console.log(g("  ║") + y(pad("  LEVEL 1 COMPLETE - PATH TRAVERSAL SANDBOX ESCAPE   ")) + g("║"));
+    console.log(g("  ╠" + bar + "╣"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + c(pad("     ██████╗  █████╗ ███████╗███████╗██╗")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██╔══██╗██╔══██╗██╔════╝██╔════╝██║")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██████╔╝███████║███████╗███████╗██║")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██╔═══╝ ██╔══██║╚════██║╚════██║╚═╝")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██║     ██║  ██║███████║███████║██╗")) + g("║"));
+    console.log(g("  ║") + c(pad("     ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝")) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + w(pad("  You bypassed the sandbox validator and read the flag.")) + g("║"));
+    console.log(g("  ║") + w("  Flag: ") + y("BYPA55ED") + w(" ".repeat(W - 16)) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + m(pad("  Lesson: Denylist regex on shell commands is brittle.")) + g("║"));
+    console.log(g("  ║") + m(pad("  Bash expands variables and decodes data at runtime,")) + g("║"));
+    console.log(g("  ║") + m(pad("  after validation - meaning static text checks can")) + g("║"));
+    console.log(g("  ║") + m(pad("  always be bypassed.")) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + w(pad("  Secure alternatives:")) + g("║"));
+    console.log(g("  ║") + w(pad("    1. Consider restricting the command set to a")) + g("║"));
+    console.log(g("  ║") + w(pad("       curated allowlist based on your needs")) + g("║"));
+    console.log(g("  ║") + w(pad("    2. Validate resolved paths after expansion")) + g("║"));
+    console.log(g("  ║") + w(pad("    3. OS-level sandboxing (chroot, containers)")) + g("║"));
+    console.log(g("  ║") + w(pad("    4. Never store sensitive data in locations")) + g("║"));
+    console.log(g("  ║") + w(pad("       accessible to the agent")) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ╚" + bar + "╝"));
+    console.log();
 }
 
 /**
