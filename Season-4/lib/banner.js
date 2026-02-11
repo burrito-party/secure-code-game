@@ -1,10 +1,10 @@
 import chalk from "chalk";
 
 export function showBanner() {
-    const cyan = chalk.cyan;
-    const magenta = chalk.magenta;
-    const green = chalk.green;
-    const white = chalk.white;
+    const cyan = chalk.cyanBright;
+    const magenta = chalk.hex("#FF00FF");
+    const green = chalk.greenBright;
+    const white = chalk.whiteBright;
 
     const art = `
 ${white("  Welcome to")}

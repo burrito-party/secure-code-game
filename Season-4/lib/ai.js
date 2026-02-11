@@ -64,7 +64,7 @@ Rules:
  */
 export async function sendToAI(userMessage) {
     if (!ghToken) {
-        console.error(chalk.red("❌ GITHUB_TOKEN not found. Please set it in your environment."));
+        console.error(chalk.redBright("❌ GITHUB_TOKEN not found. Please set it in your environment."));
         return { action: "message", text: "Error: GITHUB_TOKEN not configured." };
     }
 
@@ -93,7 +93,7 @@ export async function sendToAI(userMessage) {
         }
     } catch (err) {
         const msg = err.message || String(err);
-        console.error(chalk.red(`❌ AI Error: ${msg}`));
+        console.error(chalk.redBright(`❌ AI Error: ${msg}`));
         return { action: "message", text: "Sorry, I couldn't process that request." };
     }
 }

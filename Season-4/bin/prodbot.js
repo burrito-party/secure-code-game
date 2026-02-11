@@ -81,7 +81,7 @@ function showWelcome() {
     console.log(line(g("🤖  Productivity Bot v" + VERSION)));
     console.log(line(w("    Describe a task to get started.")));
     console.log(line(""));
-    console.log(line(w("Enter " + chalk.yellow("?") + " to see all commands.")));
+    console.log(line(w("Enter " + chalk.yellowBright("?") + " to see all commands.")));
     console.log(line(w("ProdBot uses AI, so always check for mistakes.")));
     console.log(line(w("Sandbox: " + chalk.gray("Level-1/prodbot-activities/"))));
     console.log(bot);
@@ -173,7 +173,7 @@ function stripAnsi(str) {
  */
 function askConfirmation(rl, cmd) {
     return new Promise((resolve) => {
-        console.log(chalk.yellow(`  ⚡ ${cmd}`));
+        console.log(chalk.yellowBright(`  ⚡ ${cmd}`));
         rl.question(chalk.white("  Execute? (y/n) "), (answer) => {
             resolve(answer.trim().toLowerCase() === "y");
         });
@@ -207,7 +207,7 @@ async function handleInput(input, rl) {
         case "bash": {
             const commands = result.commands || [];
             if (commands.length === 0) {
-                console.log(chalk.cyan("  🤖 No commands to execute."));
+                console.log(chalk.cyanBright("  🤖 No commands to execute."));
                 break;
             }
 
@@ -216,8 +216,8 @@ async function handleInput(input, rl) {
                 // Step 1: Security validation (denylist + path checks)
                 const validation = validateCommand(cmd, SANDBOX_DIR);
                 if (!validation.valid) {
-                    console.log(chalk.red(`  ❌ Blocked: ${cmd}`));
-                    console.log(chalk.red(`     ${validation.reason}`));
+                    console.log(chalk.redBright(`  ❌ Blocked: ${cmd}`));
+                    console.log(chalk.redBright(`     ${validation.reason}`));
                     continue;
                 }
 
@@ -243,17 +243,17 @@ async function handleInput(input, rl) {
                         showCongrats();
                     }
                 } else {
-                    console.log(chalk.red(`  ❌ ${res.error}`));
+                    console.log(chalk.redBright(`  ❌ ${res.error}`));
                 }
             }
             break;
         }
         case "message":
-            console.log(chalk.cyan("  🤖 " + result.text));
+            console.log(chalk.cyanBright("  🤖 " + result.text));
             break;
         default:
             // Fallback for unexpected response formats from the AI
-            console.log(chalk.cyan("  🤖 " + JSON.stringify(result)));
+            console.log(chalk.cyanBright("  🤖 " + JSON.stringify(result)));
     }
 }
 
