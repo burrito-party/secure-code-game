@@ -1,6 +1,6 @@
-╔══════════════════════════════════════════════════════════════╗
-║                  HINT 2 — Think in Layers                   ║
-╚══════════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════╗
+║                  HINT 2 - Think in Layers                  ║
+╚════════════════════════════════════════════════════════════╝
 
 You now know that bash.js uses regex to check for ".." in commands.
 But the validator only sees the RAW TEXT of the command — it has no

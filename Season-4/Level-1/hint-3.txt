@@ -1,6 +1,6 @@
-╔══════════════════════════════════════════════════════════════╗
-║              HINT 3 — Variables Hide Everything             ║
-╚══════════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════╗
+║              HINT 3 - Variables Hide Everything            ║
+╚════════════════════════════════════════════════════════════╝
 
 If the previous hint didn't work for you, here's a completely
 different approach that doesn't need any encoding at all.

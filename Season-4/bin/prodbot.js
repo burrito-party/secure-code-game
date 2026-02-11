@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 
+// Suppress the punycode deprecation warning (DEP0040) from the openai package
+process.removeAllListeners("warning");
+process.on("warning", (warning) => {
+    if (warning.name === "DeprecationWarning" && warning.code === "DEP0040") return;
+    console.warn(warning);
+});
+
 /**
  * prodbot.js — The main CLI entry point for ProdBot.
  *
@@ -92,32 +99,39 @@ function showCongrats() {
     const w = chalk.white;
     const m = chalk.magenta;
 
+    // Inner width of the box (between the two ║ characters)
+    const W = 58;
+    const bar = "═".repeat(W);
+    const blank = " ".repeat(W);
+    // Pad a plain string to W visible columns
+    const pad = (s) => s + " ".repeat(Math.max(0, W - s.length));
+
     console.log();
-    console.log(g("  ╔══════════════════════════════════════════════════════════╗"));
-    console.log(g("  ║") + y("  🏆  LEVEL 1 COMPLETE — PATH TRAVERSAL SANDBOX ESCAPE  ") + g("║"));
-    console.log(g("  ╠══════════════════════════════════════════════════════════╣"));
-    console.log(g("  ║                                                          ║"));
-    console.log(g("  ║") + c("     ██████╗  █████╗ ███████╗███████╗██╗") + g("                 ║"));
-    console.log(g("  ║") + c("     ██╔══██╗██╔══██╗██╔════╝██╔════╝██║") + g("                 ║"));
-    console.log(g("  ║") + c("     ██████╔╝███████║███████╗███████╗██║") + g("                 ║"));
-    console.log(g("  ║") + c("     ██╔═══╝ ██╔══██║╚════██║╚════██║╚═╝") + g("                 ║"));
-    console.log(g("  ║") + c("     ██║     ██║  ██║███████║███████║██╗") + g("                 ║"));
-    console.log(g("  ║") + c("     ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝") + g("                 ║"));
-    console.log(g("  ║                                                          ║"));
-    console.log(g("  ║") + w("  You bypassed the sandbox validator and read the flag.   ") + g("║"));
-    console.log(g("  ║") + w("  Flag: ") + y("BYPA55ED") + w("                                          ") + g("║"));
-    console.log(g("  ║                                                          ║"));
-    console.log(g("  ║") + m("  Lesson: Denylist regex on shell commands is brittle.    ") + g("║"));
-    console.log(g("  ║") + m("  Bash expands variables and decodes data at runtime,    ") + g("║"));
-    console.log(g("  ║") + m("  after validation — meaning static text checks can      ") + g("║"));
-    console.log(g("  ║") + m("  always be bypassed.                                    ") + g("║"));
-    console.log(g("  ║                                                          ║"));
-    console.log(g("  ║") + w("  Secure alternatives:                                   ") + g("║"));
-    console.log(g("  ║") + w("    1. Restricted command sets (no full shell access)     ") + g("║"));
-    console.log(g("  ║") + w("    2. Validate resolved paths after expansion            ") + g("║"));
-    console.log(g("  ║") + w("    3. OS-level sandboxing (chroot, containers, seccomp)  ") + g("║"));
-    console.log(g("  ║                                                          ║"));
-    console.log(g("  ╚══════════════════════════════════════════════════════════╝"));
+    console.log(g("  ╔" + bar + "╗"));
+    console.log(g("  ║") + y(pad("  LEVEL 1 COMPLETE - PATH TRAVERSAL SANDBOX ESCAPE   ")) + g("║"));
+    console.log(g("  ╠" + bar + "╣"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + c(pad("     ██████╗  █████╗ ███████╗███████╗██╗")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██╔══██╗██╔══██╗██╔════╝██╔════╝██║")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██████╔╝███████║███████╗███████╗██║")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██╔═══╝ ██╔══██║╚════██║╚════██║╚═╝")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██║     ██║  ██║███████║███████║██╗")) + g("║"));
+    console.log(g("  ║") + c(pad("     ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝")) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + w(pad("  You bypassed the sandbox validator and read the flag.")) + g("║"));
+    console.log(g("  ║") + w("  Flag: ") + y("BYPA55ED") + w(" ".repeat(W - 16)) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + m(pad("  Lesson: Denylist regex on shell commands is brittle.")) + g("║"));
+    console.log(g("  ║") + m(pad("  Bash expands variables and decodes data at runtime,")) + g("║"));
+    console.log(g("  ║") + m(pad("  after validation - meaning static text checks can")) + g("║"));
+    console.log(g("  ║") + m(pad("  always be bypassed.")) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + w(pad("  Secure alternatives:")) + g("║"));
+    console.log(g("  ║") + w(pad("    1. Restricted command sets (no full shell access)")) + g("║"));
+    console.log(g("  ║") + w(pad("    2. Validate resolved paths after expansion")) + g("║"));
+    console.log(g("  ║") + w(pad("    3. OS-level sandboxing (chroot, containers, seccomp)")) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ╚" + bar + "╝"));
     console.log();
 }
 
