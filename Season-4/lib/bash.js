@@ -49,8 +49,10 @@ const DENIED_PATTERNS = [
  * Checks performed (in order):
  *   1. Command is not empty
  *   2. Command does not match any denied pattern
- *   3. Command does not use absolute paths (e.g., /etc/...)
- *   4. Command does not use path traversal (..) to escape the sandbox
+ *   3. Command does not reference ~ (expands to $HOME at runtime)
+ *   4. Command is not bare "cd" (defaults to $HOME)
+ *   5. Command does not use absolute paths (e.g., /etc/...)
+ *   6. Command does not use path traversal (..) to escape the sandbox
  *
  * @param {string} cmd - The bash command to validate
  * @param {string} sandboxDir - The absolute path to the sandbox directory
@@ -65,6 +67,16 @@ export function validateCommand(cmd, sandboxDir) {
         if (pattern.test(trimmed)) {
             return { valid: false, reason: `Blocked: command matches denied pattern` };
         }
+    }
+
+    // Reject tilde expansion — ~ resolves to $HOME at runtime, escaping the sandbox
+    if (/(?:^|\s)~/.test(trimmed)) {
+        return { valid: false, reason: "Home directory references (~) are not allowed" };
+    }
+
+    // Reject bare "cd" with no arguments — defaults to $HOME
+    if (/^\s*cd\s*$/.test(trimmed)) {
+        return { valid: false, reason: "Bare 'cd' navigates to home directory and is not allowed" };
     }
 
     // Reject absolute paths — commands must only use relative paths within the sandbox
