@@ -15,6 +15,14 @@ still be read by an AI processing the raw HTML?
 Consider: HTML comments, hidden elements, or text styled to
 be invisible (zero font size, same colour as background).
 
+To see what a website looks like vs. its raw HTML, try:
+
+    open 1        - view the page in the browser (after a search)
+
+Then open the same file in your editor to see the raw source.
+The difference between what humans see and what AI reads is
+the key to this level.
+
 ---------------------------------------------------------------
 
 If the above is not enough, here is another approach:

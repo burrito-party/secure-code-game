@@ -31,12 +31,16 @@ process.on("warning", (warning) => {
 import readline from "node:readline";
 import path from "node:path";
 import fs from "node:fs";
+import { execSync } from "node:child_process";
 import chalk from "chalk";
 import { showBanner } from "../lib/banner.js";
 import { sendToAI } from "../lib/ai.js";
 import { validateCommand, PersistentShell } from "../lib/bash.js";
 
 const VERSION = "2.0.0";
+
+// Stores the sources from the last web search so the player can review them.
+let lastSources = [];
 
 // Level configuration — flags, sandbox paths, and web directories per level.
 const LEVELS = {
@@ -115,6 +119,10 @@ function showHelp() {
     console.log(chalk.hex("#FF00FF")("  Available commands:"));
     console.log(chalk.white("    ?            ") + chalk.gray("Show this help message"));
     console.log(chalk.white("    level <n>    ") + chalk.gray("Jump to a specific level"));
+    if (currentLevel >= 2) {
+        console.log(chalk.white("    sources      ") + chalk.gray("View sources from last web search"));
+        console.log(chalk.white("    open <n>     ") + chalk.gray("Open source N in the browser"));
+    }
     console.log(chalk.white("    exit         ") + chalk.gray("Exit ProdBot"));
     console.log();
     console.log(chalk.hex("#FF00FF")("  What I can do:"));
@@ -233,8 +241,10 @@ async function webSearch(query) {
         return null;
     }
 
-    // Pick the best match
+    // Sort by relevance and store all sources for later viewing
     scored.sort((a, b) => b.score - a.score);
+    lastSources = scored.map(s => ({ file: s.file, filePath: s.filePath }));
+
     const best = scored[0];
     console.log(chalk.cyanBright(`  📄 Found relevant result: ${best.file}`));
     console.log(chalk.cyanBright(`  📖 Reading ${best.file}...`));
@@ -243,13 +253,84 @@ async function webSearch(query) {
 }
 
 /**
+ * Shows the sources from the last web search.
+ */
+function showSources() {
+    if (lastSources.length === 0) {
+        console.log(chalk.gray("  No sources yet. Try a web search first."));
+        return;
+    }
+    console.log();
+    console.log(chalk.hex("#FF00FF")("  Sources:"));
+    for (let i = 0; i < lastSources.length; i++) {
+        const name = lastSources[i].file.replace(".html", "").replace(/-/g, ".");
+        console.log(chalk.white(`    [${i + 1}] `) + chalk.cyanBright(name));
+    }
+    console.log(chalk.gray("  Type " + chalk.white("open <n>") + " to view a source in the browser."));
+    console.log();
+}
+
+/**
+ * Opens a source in the Codespace browser using a python HTTP server.
+ * Serves the web/ directory on a temporary port, then opens the file.
+ */
+function openSource(index) {
+    if (index < 1 || index > lastSources.length) {
+        console.log(chalk.redBright(`  ❌ Invalid source number. Use 1-${lastSources.length}.`));
+        return;
+    }
+    const source = lastSources[index - 1];
+    const dir = path.dirname(source.filePath);
+    const port = 18920;
+
+    console.log(chalk.cyanBright(`  🌐 Opening ${source.file} in browser...`));
+    console.log(chalk.gray(`  Serving on http://localhost:${port}/${source.file}`));
+
+    try {
+        // Start a background HTTP server and open the URL
+        execSync(
+            `cd "${dir}" && python3 -m http.server ${port} &>/dev/null & ` +
+            `sleep 1 && python3 -c "import webbrowser; webbrowser.open('http://localhost:${port}/${source.file}')"`,
+            { stdio: "ignore", timeout: 5000 }
+        );
+        console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
+        console.log(chalk.gray("  The server will stop automatically when you close ProdBot."));
+    } catch {
+        // Fallback: just tell them the URL
+        console.log(chalk.yellowBright(`  ⚠️  Could not open automatically.`));
+        console.log(chalk.white(`  Open this URL in your browser:`));
+        console.log(chalk.cyanBright(`  http://localhost:${port}/${source.file}`));
+        console.log(chalk.gray(`  Start the server manually: cd ${dir} && python3 -m http.server ${port}`));
+    }
+}
+
+/**
+ * Displays the sources footer after a web search response.
+ */
+function showSourcesFooter() {
+    if (lastSources.length === 0) return;
+    console.log();
+    console.log(chalk.hex("#FF00FF")("  Sources:"));
+    for (let i = 0; i < Math.min(lastSources.length, 3); i++) {
+        const name = lastSources[i].file.replace(".html", "").replace(/-/g, ".");
+        console.log(chalk.white(`    [${i + 1}] `) + chalk.cyanBright(name));
+    }
+    if (lastSources.length > 3) {
+        console.log(chalk.gray(`    ... and ${lastSources.length - 3} more (type "sources" to see all)`));
+    }
+    console.log(chalk.gray("  Type " + chalk.white("open <n>") + " to view a source in the browser."));
+}
+
+/**
  * Handles a single line of user input.
  *
  * Flow:
  *   1. "?" → show help
  *   2. "level <n>" → switch to that level
- *   3. If on Level 2+ and query looks like a search → web search
- *   4. Anything else → send to AI, get back bash commands or a message
+ *   3. "sources" → show sources from last search
+ *   4. "open <n>" → open source N in browser
+ *   5. If on Level 2+ and query looks like a search → web search
+ *   6. Anything else → send to AI, get back bash commands or a message
  */
 async function handleInput(input, rl) {
     const trimmed = input.trim();
@@ -264,6 +345,19 @@ async function handleInput(input, rl) {
     const levelMatch = trimmed.match(/^level\s+(\d+)$/i);
     if (levelMatch) {
         switchToLevel(parseInt(levelMatch[1]));
+        return;
+    }
+
+    // Sources command
+    if (trimmed.toLowerCase() === "sources") {
+        showSources();
+        return;
+    }
+
+    // Open source command
+    const openMatch = trimmed.match(/^open\s+(\d+)$/i);
+    if (openMatch) {
+        openSource(parseInt(openMatch[1]));
         return;
     }
 
@@ -338,10 +432,12 @@ async function handleInput(input, rl) {
                     console.log(chalk.redBright(`  ❌ ${res.error}`));
                 }
             }
+            if (webContext) showSourcesFooter();
             break;
         }
         case "message":
             console.log(chalk.cyanBright("  🤖 " + result.text));
+            if (webContext) showSourcesFooter();
             break;
         default:
             // Fallback for unexpected response formats from the AI
