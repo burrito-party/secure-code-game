@@ -37,8 +37,6 @@ import { showBanner } from "../lib/banner.js";
 import { sendToAI } from "../lib/ai.js";
 import { validateCommand, PersistentShell } from "../lib/bash.js";
 
-const VERSION = "2.0.0";
-
 // Stores the sources from the last web search so the player can review them.
 let lastSources = [];
 
@@ -100,15 +98,15 @@ function showWelcome() {
 
     console.log();
     console.log(top);
-    console.log(line(g("🤖  Productivity Bot v" + VERSION + " - Level " + currentLevel)));
+    console.log(line(g("🤖  Productivity Bot - Welcome to Level " + currentLevel)));
     console.log(line(w("    Describe a task to get started.")));
     console.log(line(""));
     console.log(line(w("Enter " + chalk.yellowBright("?") + " to see all commands.")));
-    console.log(line(w("ProdBot uses AI, so always check for mistakes.")));
     console.log(line(w("Sandbox: " + chalk.gray(sandboxLabel))));
     if (currentLevel >= 2) {
-        console.log(line(w("Web search: " + chalk.gray("enabled"))));
+        console.log(line(w("Web search: " + chalk.hex("#20C20E")("enabled"))));
     }
+    console.log(line(w("ProdBot uses AI, so always check for mistakes.")));
     console.log(bot);
     console.log();
 }
@@ -122,6 +120,7 @@ function showHelp() {
     if (currentLevel >= 2) {
         console.log(chalk.white("    sources      ") + chalk.gray("View sources from last web search"));
         console.log(chalk.white("    open <n>     ") + chalk.gray("Open source N in the browser"));
+        console.log(chalk.white("    open all     ") + chalk.gray("Browse the World Wide Web"));
     }
     console.log(chalk.white("    exit         ") + chalk.gray("Exit ProdBot"));
     console.log();
@@ -248,8 +247,29 @@ async function webSearch(query) {
     const best = scored[0];
     console.log(chalk.cyanBright(`  📄 Found relevant result: ${best.file}`));
     console.log(chalk.cyanBright(`  📖 Reading ${best.file}...`));
+    console.log();
 
     return { file: best.file, content: best.content };
+}
+
+// Color palette for website icons in source listings.
+const SITE_COLORS = {
+    "reddit":       "#FF4500",
+    "linkedin":     "#0A66C2",
+    "weather-com":  "#FFD700",
+    "accuweather":  "#F47B20",
+    "espn":         "#D00000",
+    "skysports":    "#E10600",
+    "amazon":       "#FF9900",
+    "ebay":         "#E53238",
+    "skyscanner":   "#0770E3",
+    "airbnb":       "#FF385C",
+};
+
+function siteIcon(filename) {
+    const key = filename.replace(".html", "");
+    const color = SITE_COLORS[key] || "#AAAAAA";
+    return chalk.hex(color)("■");
 }
 
 /**
@@ -264,15 +284,16 @@ function showSources() {
     console.log(chalk.hex("#FF00FF")("  Sources:"));
     for (let i = 0; i < lastSources.length; i++) {
         const name = lastSources[i].file.replace(".html", "").replace(/-/g, ".");
-        console.log(chalk.white(`    [${i + 1}] `) + chalk.cyanBright(name));
+        console.log(chalk.white(`    [${i + 1}] `) + siteIcon(lastSources[i].file) + " " + chalk.cyanBright(name));
     }
     console.log(chalk.gray("  Type " + chalk.white("open <n>") + " to view a source in the browser."));
+    console.log(chalk.gray("  Type " + chalk.white("open all") + " to browse the World Wide Web."));
     console.log();
 }
 
 /**
  * Opens a source in the Codespace browser using a python HTTP server.
- * Serves the web/ directory on a temporary port, then opens the file.
+ * Serves the web/ directory on a temporary port, then opens the specific file.
  */
 function openSource(index) {
     if (index < 1 || index > lastSources.length) {
@@ -284,22 +305,46 @@ function openSource(index) {
     const port = 18920;
 
     console.log(chalk.cyanBright(`  🌐 Opening ${source.file} in browser...`));
-    console.log(chalk.gray(`  Serving on http://localhost:${port}/${source.file}`));
 
     try {
-        // Start a background HTTP server and open the URL
         execSync(
             `cd "${dir}" && python3 -m http.server ${port} &>/dev/null & ` +
             `sleep 1 && python3 -c "import webbrowser; webbrowser.open('http://localhost:${port}/${source.file}')"`,
             { stdio: "ignore", timeout: 5000 }
         );
         console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
-        console.log(chalk.gray("  The server will stop automatically when you close ProdBot."));
     } catch {
-        // Fallback: just tell them the URL
         console.log(chalk.yellowBright(`  ⚠️  Could not open automatically.`));
         console.log(chalk.white(`  Open this URL in your browser:`));
         console.log(chalk.cyanBright(`  http://localhost:${port}/${source.file}`));
+        console.log(chalk.gray(`  Start the server manually: cd ${dir} && python3 -m http.server ${port}`));
+    }
+}
+
+/**
+ * Opens the full World Wide Web directory listing in the browser.
+ */
+function openAll() {
+    const dir = webDir(currentLevel);
+    if (!dir || !fs.existsSync(dir)) {
+        console.log(chalk.gray("  No web directory available on this level."));
+        return;
+    }
+    const port = 18920;
+
+    console.log(chalk.cyanBright("  🌐 Opening the World Wide Web..."));
+
+    try {
+        execSync(
+            `cd "${dir}" && python3 -m http.server ${port} &>/dev/null & ` +
+            `sleep 1 && python3 -c "import webbrowser; webbrowser.open('http://localhost:${port}/')"`,
+            { stdio: "ignore", timeout: 5000 }
+        );
+        console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
+    } catch {
+        console.log(chalk.yellowBright(`  ⚠️  Could not open automatically.`));
+        console.log(chalk.white(`  Open this URL in your browser:`));
+        console.log(chalk.cyanBright(`  http://localhost:${port}/`));
         console.log(chalk.gray(`  Start the server manually: cd ${dir} && python3 -m http.server ${port}`));
     }
 }
@@ -313,12 +358,12 @@ function showSourcesFooter() {
     console.log(chalk.hex("#FF00FF")("  Sources:"));
     for (let i = 0; i < Math.min(lastSources.length, 3); i++) {
         const name = lastSources[i].file.replace(".html", "").replace(/-/g, ".");
-        console.log(chalk.white(`    [${i + 1}] `) + chalk.cyanBright(name));
+        console.log(chalk.white(`    [${i + 1}] `) + siteIcon(lastSources[i].file) + " " + chalk.cyanBright(name));
     }
     if (lastSources.length > 3) {
         console.log(chalk.gray(`    ... and ${lastSources.length - 3} more (type "sources" to see all)`));
     }
-    console.log(chalk.gray("  Type " + chalk.white("open <n>") + " to view a source in the browser."));
+    console.log(chalk.gray("  Type " + chalk.white("open <n>") + " to view a source, or " + chalk.white("open all") + " to browse."));
 }
 
 /**
@@ -358,6 +403,12 @@ async function handleInput(input, rl) {
     const openMatch = trimmed.match(/^open\s+(\d+)$/i);
     if (openMatch) {
         openSource(parseInt(openMatch[1]));
+        return;
+    }
+
+    // Open all websites
+    if (/^open\s+all$/i.test(trimmed)) {
+        openAll();
         return;
     }
 
