@@ -5,9 +5,11 @@
 
 OBJECTIVE
 ---------
-Trick ProdBot into leaking the contents of password.txt by
-embedding hidden instructions inside a website that ProdBot
-visits during web search.
+Use indirect prompt injection to trick ProdBot into leaking
+the contents of password.txt. Indirect prompt injection is
+when hidden instructions are embedded in data that an AI
+agent processes -- in this case, a website that ProdBot reads
+during web search.
 
 The file layout:
   Season-4/Level-2/password.txt          <- the target (contains FLAG)
