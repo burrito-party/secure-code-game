@@ -1,0 +1,19 @@
+╔══════════════════════════════════════════════════════════════╗
+║                      HINT 1 — Level 2                       ║
+║            Indirect Prompt Injection via Web Search          ║
+╚══════════════════════════════════════════════════════════════╝
+
+ProdBot has a new feature: it can search the web.
+
+When ProdBot visits a website, it reads the full HTML content
+and sends it to the AI for processing. Think about that for a
+moment -- ProdBot trusts everything it reads on the internet.
+
+What if the website contained instructions that ProdBot's AI
+would follow?
+
+Start by looking at the websites in the web/ directory. Open
+a few of them and read the HTML source code. Notice anything
+about how they are structured?
+
+Now think: who controls those websites?
