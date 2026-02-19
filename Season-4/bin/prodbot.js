@@ -209,7 +209,7 @@ async function webSearch(query) {
     const dir = webDir(currentLevel);
     if (!dir || !fs.existsSync(dir)) return null;
 
-    const files = fs.readdirSync(dir).filter(f => f.endsWith(".html"));
+    const files = fs.readdirSync(dir).filter(f => f.endsWith(".html") && f !== "index.html");
     if (files.length === 0) return null;
 
     const queryLower = query.toLowerCase();
@@ -292,8 +292,32 @@ function showSources() {
 }
 
 /**
+ * Ensures the python HTTP server is running on the given port for the web dir.
+ * Returns true if the server is ready.
+ */
+function ensureWebServer(dir, port) {
+    try {
+        // Check if server is already running
+        execSync(`curl -s -o /dev/null -w "%{http_code}" http://localhost:${port}/ 2>/dev/null`, { timeout: 2000 });
+        return true;
+    } catch {
+        // Start a new server in the background
+        try {
+            execSync(
+                `cd "${dir}" && python3 -m http.server ${port} &>/dev/null &`,
+                { stdio: "ignore", timeout: 2000 }
+            );
+            execSync("sleep 1", { stdio: "ignore", timeout: 3000 });
+            return true;
+        } catch {
+            return false;
+        }
+    }
+}
+
+/**
  * Opens a source in the Codespace browser using a python HTTP server.
- * Serves the web/ directory on a temporary port, then opens the specific file.
+ * Opens the specific file directly — not the directory listing.
  */
 function openSource(index) {
     if (index < 1 || index > lastSources.length) {
@@ -303,26 +327,31 @@ function openSource(index) {
     const source = lastSources[index - 1];
     const dir = path.dirname(source.filePath);
     const port = 18920;
+    const url = `http://localhost:${port}/${source.file}`;
 
     console.log(chalk.cyanBright(`  🌐 Opening ${source.file} in browser...`));
 
-    try {
-        execSync(
-            `cd "${dir}" && python3 -m http.server ${port} &>/dev/null & ` +
-            `sleep 1 && python3 -c "import webbrowser; webbrowser.open('http://localhost:${port}/${source.file}')"`,
-            { stdio: "ignore", timeout: 5000 }
-        );
-        console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
-    } catch {
-        console.log(chalk.yellowBright(`  ⚠️  Could not open automatically.`));
+    if (ensureWebServer(dir, port)) {
+        try {
+            execSync(
+                `python3 -c "import webbrowser; webbrowser.open('${url}')"`,
+                { stdio: "ignore", timeout: 5000 }
+            );
+            console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
+        } catch {
+            console.log(chalk.white(`  Open this URL in your browser:`));
+            console.log(chalk.cyanBright(`  ${url}`));
+        }
+    } else {
+        console.log(chalk.yellowBright(`  ⚠️  Could not start server.`));
         console.log(chalk.white(`  Open this URL in your browser:`));
-        console.log(chalk.cyanBright(`  http://localhost:${port}/${source.file}`));
-        console.log(chalk.gray(`  Start the server manually: cd ${dir} && python3 -m http.server ${port}`));
+        console.log(chalk.cyanBright(`  ${url}`));
+        console.log(chalk.gray(`  Start the server: cd ${dir} && python3 -m http.server ${port}`));
     }
 }
 
 /**
- * Opens the full World Wide Web directory listing in the browser.
+ * Opens the World Wide Web landing page in the browser.
  */
 function openAll() {
     const dir = webDir(currentLevel);
@@ -331,21 +360,26 @@ function openAll() {
         return;
     }
     const port = 18920;
+    const url = `http://localhost:${port}/index.html`;
 
     console.log(chalk.cyanBright("  🌐 Opening the World Wide Web..."));
 
-    try {
-        execSync(
-            `cd "${dir}" && python3 -m http.server ${port} &>/dev/null & ` +
-            `sleep 1 && python3 -c "import webbrowser; webbrowser.open('http://localhost:${port}/')"`,
-            { stdio: "ignore", timeout: 5000 }
-        );
-        console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
-    } catch {
-        console.log(chalk.yellowBright(`  ⚠️  Could not open automatically.`));
+    if (ensureWebServer(dir, port)) {
+        try {
+            execSync(
+                `python3 -c "import webbrowser; webbrowser.open('${url}')"`,
+                { stdio: "ignore", timeout: 5000 }
+            );
+            console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
+        } catch {
+            console.log(chalk.white(`  Open this URL in your browser:`));
+            console.log(chalk.cyanBright(`  ${url}`));
+        }
+    } else {
+        console.log(chalk.yellowBright(`  ⚠️  Could not start server.`));
         console.log(chalk.white(`  Open this URL in your browser:`));
-        console.log(chalk.cyanBright(`  http://localhost:${port}/`));
-        console.log(chalk.gray(`  Start the server manually: cd ${dir} && python3 -m http.server ${port}`));
+        console.log(chalk.cyanBright(`  ${url}`));
+        console.log(chalk.gray(`  Start the server: cd ${dir} && python3 -m http.server ${port}`));
     }
 }
 
