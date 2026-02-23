@@ -416,8 +416,24 @@ ${knownCards}${userSection}</div>
 }
 
 /**
+ * Tries to auto-open a URL in the browser. Returns true on success.
+ * Uses the full Codespace URL so the path is preserved.
+ */
+function tryOpenBrowser(url) {
+    try {
+        execSync(
+            `python3 -c "import webbrowser; webbrowser.open('${url}')"`,
+            { stdio: "ignore", timeout: 5000 }
+        );
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Opens a source in the Codespace browser.
- * Prints a clickable URL instead of using webbrowser.open (which loses the path in Codespaces).
+ * Auto-opens the full Codespace URL so the specific file loads directly.
  */
 function openSource(index) {
     if (index < 1 || index > lastSources.length) {
@@ -432,7 +448,11 @@ function openSource(index) {
 
     if (ensureWebServer(dir, port)) {
         const url = buildBrowserUrl(source.file, port);
-        console.log(chalk.hex("#20C20E")("  ✅ Server ready — click the link below:"));
+        if (tryOpenBrowser(url)) {
+            console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
+        } else {
+            console.log(chalk.hex("#20C20E")("  ✅ Server ready — click the link below:"));
+        }
         console.log(chalk.white("  → ") + chalk.cyanBright(url));
     } else {
         console.log(chalk.yellowBright(`  ⚠️  Could not start server.`));
@@ -452,14 +472,17 @@ function openAll() {
     }
     const port = 18920;
 
-    // Regenerate index.html to pick up new user-created sites
     fs.writeFileSync(path.join(dir, "index.html"), generateIndexHtml(dir));
 
     console.log(chalk.cyanBright("  🌐 Opening the World Wide Web..."));
 
     if (ensureWebServer(dir, port)) {
         const url = buildBrowserUrl("index.html", port);
-        console.log(chalk.hex("#20C20E")("  ✅ Server ready — click the link below:"));
+        if (tryOpenBrowser(url)) {
+            console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
+        } else {
+            console.log(chalk.hex("#20C20E")("  ✅ Server ready — click the link below:"));
+        }
         console.log(chalk.white("  → ") + chalk.cyanBright(url));
     } else {
         console.log(chalk.yellowBright(`  ⚠️  Could not start server.`));
