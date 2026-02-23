@@ -252,19 +252,24 @@ async function webSearch(query) {
     return { file: best.file, content: best.content };
 }
 
-// Color palette for website icons in source listings.
-const SITE_COLORS = {
-    "reddit":       "#FF4500",
-    "linkedin":     "#0A66C2",
-    "weather-com":  "#FFD700",
-    "accuweather":  "#F47B20",
-    "espn":         "#D00000",
-    "skysports":    "#E10600",
-    "amazon":       "#FF9900",
-    "ebay":         "#E53238",
-    "skyscanner":   "#0770E3",
-    "airbnb":       "#FF385C",
+// Known websites with their brand colors and icons.
+const SITE_CATALOG = {
+    "reddit":       { color: "#FF4500", icon: "💬",  label: "Reddit" },
+    "linkedin":     { color: "#0A66C2", icon: "💼",  label: "LinkedIn" },
+    "weather-com":  { color: "#1a1a2e", icon: "🌤️", label: "Weather.com", border: "#FFD700", textColor: "#FFD700" },
+    "accuweather":  { color: "#F47B20", icon: "🌡️", label: "AccuWeather" },
+    "espn":         { color: "#D00000", icon: "🏀",  label: "ESPN" },
+    "skysports":    { color: "#E10600", icon: "⚽",  label: "Sky Sports" },
+    "amazon":       { color: "#131921", icon: "📦",  label: "Amazon", border: "#FF9900", textColor: "#FF9900" },
+    "ebay":         { color: "#E53238", icon: "🏷️", label: "eBay" },
+    "skyscanner":   { color: "#0770E3", icon: "✈️",  label: "Skyscanner" },
+    "airbnb":       { color: "#FF385C", icon: "🏠",  label: "Airbnb" },
 };
+
+// Color palette for terminal source listings.
+const SITE_COLORS = Object.fromEntries(
+    Object.entries(SITE_CATALOG).map(([k, v]) => [k, v.color === "#1a1a2e" ? (v.border || v.color) : v.color])
+);
 
 function siteIcon(filename) {
     const key = filename.replace(".html", "");
@@ -292,16 +297,25 @@ function showSources() {
 }
 
 /**
+ * Builds the correct browser URL for a file, handling Codespaces port forwarding.
+ * In Codespaces, localhost URLs don't work in the browser — need the forwarded URL.
+ */
+function buildBrowserUrl(filePath, port) {
+    const codespaceName = process.env.CODESPACE_NAME;
+    if (codespaceName) {
+        return `https://${codespaceName}-${port}.app.github.dev/${filePath}`;
+    }
+    return `http://localhost:${port}/${filePath}`;
+}
+
+/**
  * Ensures the python HTTP server is running on the given port for the web dir.
- * Returns true if the server is ready.
  */
 function ensureWebServer(dir, port) {
     try {
-        // Check if server is already running
         execSync(`curl -s -o /dev/null -w "%{http_code}" http://localhost:${port}/ 2>/dev/null`, { timeout: 2000 });
         return true;
     } catch {
-        // Start a new server in the background
         try {
             execSync(
                 `cd "${dir}" && python3 -m http.server ${port} &>/dev/null &`,
@@ -316,8 +330,94 @@ function ensureWebServer(dir, port) {
 }
 
 /**
- * Opens a source in the Codespace browser using a python HTTP server.
- * Opens the specific file directly — not the directory listing.
+ * Generates the World Wide Web index.html dynamically, including user-created sites.
+ */
+function generateIndexHtml(dir) {
+    const files = fs.readdirSync(dir).filter(f => f.endsWith(".html") && f !== "index.html");
+
+    let knownCards = "";
+    let userCards = "";
+    for (const file of files) {
+        const key = file.replace(".html", "");
+        const catalog = SITE_CATALOG[key];
+
+        if (catalog) {
+            const bg = catalog.color;
+            const border = catalog.border ? `border: 1px solid ${catalog.border};` : "";
+            const textColor = catalog.textColor ? `color: ${catalog.textColor};` : "";
+            knownCards += `  <a class="card" style="background:${bg};${border}${textColor}" href="${file}">
+    <span class="icon">${catalog.icon}</span>
+    <span class="label">${catalog.label}</span>
+  </a>\n`;
+        } else {
+            const displayName = key.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+            userCards += `  <a class="card user-site" href="${file}">
+    <span class="icon">🌍</span>
+    <span class="label">${displayName}</span>
+  </a>\n`;
+        }
+    }
+
+    const userSection = userCards ? `<div class="divider">User-Created Websites</div>\n${userCards}` : "";
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>World Wide Web</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0d1117; color: #e6edf3;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 40px 20px;
+  }
+  h1 {
+    font-size: 28px; font-weight: 700; margin-bottom: 6px;
+    background: linear-gradient(135deg, #ff00ff, #00ffff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .subtitle { font-size: 14px; color: #8b949e; margin-bottom: 36px; }
+  .grid {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 16px; max-width: 860px; width: 100%;
+  }
+  .card {
+    border-radius: 12px; padding: 20px 16px; text-align: center;
+    text-decoration: none; color: white; font-weight: 600; font-size: 14px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    min-height: 110px; justify-content: center;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .card .icon { font-size: 28px; }
+  .card .label { line-height: 1.3; }
+  .card.user-site {
+    background: #161b22; border: 2px dashed #8b949e; color: #58a6ff;
+  }
+  .card.user-site:hover { border-color: #58a6ff; }
+  .divider {
+    grid-column: 1 / -1; font-size: 12px; color: #8b949e;
+    text-transform: uppercase; letter-spacing: 1px; margin-top: 8px;
+    border-top: 1px solid #30363d; padding-top: 12px;
+  }
+  @media (max-width: 700px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 440px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<h1>🌐 World Wide Web</h1>
+<p class="subtitle">ProdBot's simulated internet — ${files.length} websites to explore</p>
+<div class="grid">
+${knownCards}${userSection}</div>
+</body>
+</html>`;
+}
+
+/**
+ * Opens a source in the Codespace browser.
+ * Prints a clickable URL instead of using webbrowser.open (which loses the path in Codespaces).
  */
 function openSource(index) {
     if (index < 1 || index > lastSources.length) {
@@ -327,31 +427,22 @@ function openSource(index) {
     const source = lastSources[index - 1];
     const dir = path.dirname(source.filePath);
     const port = 18920;
-    const url = `http://localhost:${port}/${source.file}`;
 
-    console.log(chalk.cyanBright(`  🌐 Opening ${source.file} in browser...`));
+    console.log(chalk.cyanBright(`  🌐 Opening ${source.file}...`));
 
     if (ensureWebServer(dir, port)) {
-        try {
-            execSync(
-                `python3 -c "import webbrowser; webbrowser.open('${url}')"`,
-                { stdio: "ignore", timeout: 5000 }
-            );
-            console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
-        } catch {
-            console.log(chalk.white(`  Open this URL in your browser:`));
-            console.log(chalk.cyanBright(`  ${url}`));
-        }
+        const url = buildBrowserUrl(source.file, port);
+        console.log(chalk.hex("#20C20E")("  ✅ Server ready — click the link below:"));
+        console.log(chalk.white("  → ") + chalk.cyanBright(url));
     } else {
         console.log(chalk.yellowBright(`  ⚠️  Could not start server.`));
-        console.log(chalk.white(`  Open this URL in your browser:`));
-        console.log(chalk.cyanBright(`  ${url}`));
-        console.log(chalk.gray(`  Start the server: cd ${dir} && python3 -m http.server ${port}`));
+        console.log(chalk.gray(`  Start manually: cd ${dir} && python3 -m http.server ${port}`));
     }
 }
 
 /**
- * Opens the World Wide Web landing page in the browser.
+ * Opens the World Wide Web landing page.
+ * Regenerates index.html to include any user-created websites.
  */
 function openAll() {
     const dir = webDir(currentLevel);
@@ -360,26 +451,19 @@ function openAll() {
         return;
     }
     const port = 18920;
-    const url = `http://localhost:${port}/index.html`;
+
+    // Regenerate index.html to pick up new user-created sites
+    fs.writeFileSync(path.join(dir, "index.html"), generateIndexHtml(dir));
 
     console.log(chalk.cyanBright("  🌐 Opening the World Wide Web..."));
 
     if (ensureWebServer(dir, port)) {
-        try {
-            execSync(
-                `python3 -c "import webbrowser; webbrowser.open('${url}')"`,
-                { stdio: "ignore", timeout: 5000 }
-            );
-            console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
-        } catch {
-            console.log(chalk.white(`  Open this URL in your browser:`));
-            console.log(chalk.cyanBright(`  ${url}`));
-        }
+        const url = buildBrowserUrl("index.html", port);
+        console.log(chalk.hex("#20C20E")("  ✅ Server ready — click the link below:"));
+        console.log(chalk.white("  → ") + chalk.cyanBright(url));
     } else {
         console.log(chalk.yellowBright(`  ⚠️  Could not start server.`));
-        console.log(chalk.white(`  Open this URL in your browser:`));
-        console.log(chalk.cyanBright(`  ${url}`));
-        console.log(chalk.gray(`  Start the server: cd ${dir} && python3 -m http.server ${port}`));
+        console.log(chalk.gray(`  Start manually: cd ${dir} && python3 -m http.server ${port}`));
     }
 }
 
