@@ -416,6 +416,14 @@ ${knownCards}${userSection}</div>
 }
 
 /**
+ * Creates a clickable terminal hyperlink using OSC 8 escape sequences.
+ * Renders as styled "label" text that links to url when clicked.
+ */
+function termLink(label, url) {
+    return `\u001b]8;;${url}\u0007${label}\u001b]8;;\u0007`;
+}
+
+/**
  * Tries to auto-open a URL in the browser. Returns true on success.
  * Uses the full Codespace URL so the path is preserved.
  */
@@ -448,12 +456,12 @@ function openSource(index) {
 
     if (ensureWebServer(dir, port)) {
         const url = buildBrowserUrl(source.file, port);
+        const link = termLink(chalk.cyanBright("click here"), url);
         if (tryOpenBrowser(url)) {
-            console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
+            console.log(chalk.hex("#20C20E")("  ✅ Opened! ") + chalk.white("Check your browser tab or ") + link);
         } else {
-            console.log(chalk.hex("#20C20E")("  ✅ Server ready — click the link below:"));
+            console.log(chalk.hex("#20C20E")("  ✅ Server ready — ") + link + chalk.white(" to view."));
         }
-        console.log(chalk.white("  → ") + chalk.cyanBright(url));
     } else {
         console.log(chalk.yellowBright(`  ⚠️  Could not start server.`));
         console.log(chalk.gray(`  Start manually: cd ${dir} && python3 -m http.server ${port}`));
@@ -478,12 +486,12 @@ function openAll() {
 
     if (ensureWebServer(dir, port)) {
         const url = buildBrowserUrl("index.html", port);
+        const link = termLink(chalk.cyanBright("click here"), url);
         if (tryOpenBrowser(url)) {
-            console.log(chalk.hex("#20C20E")("  ✅ Opened! Check your browser tab."));
+            console.log(chalk.hex("#20C20E")("  ✅ Opened! ") + chalk.white("Check your browser tab or ") + link);
         } else {
-            console.log(chalk.hex("#20C20E")("  ✅ Server ready — click the link below:"));
+            console.log(chalk.hex("#20C20E")("  ✅ Server ready — ") + link + chalk.white(" to view."));
         }
-        console.log(chalk.white("  → ") + chalk.cyanBright(url));
     } else {
         console.log(chalk.yellowBright(`  ⚠️  Could not start server.`));
         console.log(chalk.gray(`  Start manually: cd ${dir} && python3 -m http.server ${port}`));
