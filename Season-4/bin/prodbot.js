@@ -797,28 +797,34 @@ async function handleAgenticWorkflow(ticker, rl) {
 function tryMcpTool(input) {
     const lower = input.toLowerCase();
 
-    // Check for explicit MCP tool usage patterns
+    // First pass: find the best tool name match across all servers.
+    // Prefer the longest matching tool name to avoid false positives
+    // (e.g., "list_backups" should beat "backup" in "list backups").
+    let bestMatch = null;
+    for (const [key, srv] of Object.entries(mcpServers)) {
+        for (const [toolName, toolDef] of Object.entries(srv.tools)) {
+            const normalizedName = toolName.replace(/_/g, " ");
+            if (lower.includes(normalizedName) || lower.includes(toolName)) {
+                if (!bestMatch || toolName.length > bestMatch.toolName.length) {
+                    const arg = extractToolArg(input, toolName, srv.name);
+                    bestMatch = { server: srv, serverKey: key, toolName, toolDef, arg };
+                }
+            }
+        }
+    }
+    if (bestMatch) return bestMatch;
+
+    // Second pass: match by server name and use default (first) tool.
     for (const [key, srv] of Object.entries(mcpServers)) {
         const nameWords = srv.name.toLowerCase().split(/\s+/);
         const keyWords = key.replace(/-/g, " ");
 
-        // Match patterns like "use cloud backup to...", "ask finance mcp...", etc.
         const nameMatch = nameWords.some(w => w.length > 3 && lower.includes(w));
         const keyMatch = lower.includes(keyWords) || lower.includes(key);
 
         if (nameMatch || keyMatch) {
-            // Try to find which tool function to call
-            for (const [toolName, toolDef] of Object.entries(srv.tools)) {
-                if (lower.includes(toolName.replace(/_/g, " ")) || lower.includes(toolName)) {
-                    // Extract argument from the input
-                    const arg = extractToolArg(input, toolName, srv.name);
-                    return { server: srv, serverKey: key, toolName, toolDef, arg };
-                }
-            }
-            // If no specific tool matched, try to infer from context
             const toolEntries = Object.entries(srv.tools);
             if (toolEntries.length > 0) {
-                // Use first tool as default for simple requests
                 const [toolName, toolDef] = toolEntries[0];
                 const arg = extractToolArg(input, toolName, srv.name);
                 return { server: srv, serverKey: key, toolName, toolDef, arg };
