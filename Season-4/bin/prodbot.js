@@ -149,13 +149,13 @@ function showWelcome() {
         console.log();
         console.log(chalk.hex("#FF00FF")("  Try:"));
         console.log(chalk.gray('    "New York weather forecast"'));
-        console.log(chalk.gray('    "Latest ESPN scores"'));
-        console.log(chalk.gray('    "Latest Sky Sports scores"'));
         console.log(chalk.gray('    "Find flights on Skyscanner"'));
+        console.log(chalk.gray('    "Latest ESPN scores"'));
         console.log(chalk.gray('    "Search Airbnb rentals"'));
         console.log(chalk.gray('    "Find products on Amazon"'));
-        console.log(chalk.gray('    "Search eBay listings"'));
         console.log(chalk.gray('    "Latest Reddit discussions"'));
+        console.log(chalk.gray('    "Latest Sky Sports scores"'));
+        console.log(chalk.gray('    "Search eBay listings"'));
         console.log(chalk.gray('    "Find jobs on LinkedIn"'));
         console.log(chalk.gray('    "Latest Bloomberg news"'));
         console.log(chalk.gray('    "Yahoo Finance stock prices"'));
@@ -167,10 +167,10 @@ function showWelcome() {
         console.log(chalk.gray('    "Deep dive into Nvidia"'));
         console.log(chalk.gray('    "Analyse Tesla for me"'));
         console.log();
-        console.log(chalk.hex("#FF00FF")("  Agentic workflow:"));
-        console.log(chalk.gray("    User Prompt → ") + chalk.hex("#20C20E")("💹 Finance") + chalk.gray(" → ") + chalk.hex("#0770E3")("🌐 Web") + chalk.gray(" → ") + chalk.hex("#FF00FF")("📊 Report") + chalk.gray(" → ") + chalk.hex("#F0A030")("☁️  Backup"));
+        console.log(chalk.hex("#FF00FF")("  These prompts trigger an agentic workflow:"));
+        console.log(chalk.gray("    User Prompt → ") + chalk.hex("#20C20E")("📈 Finance") + chalk.gray(" → ") + chalk.hex("#0770E3")("🌐 Web") + chalk.gray(" → ") + chalk.hex("#FF00FF")("📊 Report") + chalk.gray(" → ") + chalk.hex("#F0A030")("☁️  Cloud Backup"));
         console.log();
-        console.log(chalk.hex("#20C20E")("    💹 Finance MCP") + chalk.gray("  →  stock quote + market overview"));
+        console.log(chalk.hex("#20C20E")("    📈 Finance MCP") + chalk.gray("  →  stock quote + market overview"));
         console.log(chalk.hex("#0770E3")("    🌐 Web MCP    ") + chalk.gray("  →  online news & research"));
         console.log(chalk.hex("#F0A030")("    ☁️  Cloud MCP  ") + chalk.gray("  →  auto-save report to backup"));
     }
@@ -602,7 +602,7 @@ function showSourcesFooter() {
 
 // MCP tool icons for terminal display.
 const MCP_ICONS = {
-    "finance-mcp": { icon: "💹", color: "#20C20E" },
+    "finance-mcp": { icon: "📈", color: "#20C20E" },
     "web-mcp":     { icon: "🌐", color: "#0770E3" },
     "cloud-mcp":   { icon: "☁️",  color: "#F0A030" },
 };
@@ -707,27 +707,23 @@ async function handleAgenticWorkflow(ticker, rl) {
     console.log(chalk.hex("#FF00FF")("  🧠 Planning research workflow for " + chalk.yellowBright(ticker) + "..."));
     await sleep(600);
 
-    // Step 1: Finance MCP — stock quote + market summary
+    // Step 1: Finance MCP — stock quote only (market summary goes to report)
     console.log();
-    console.log(chalk.hex("#20C20E")("  💹 Finance MCP → stock(" + ticker + ")..."));
+    console.log(chalk.hex("#20C20E")("  📈 Finance MCP → stock(" + ticker + ")..."));
     await sleep(400);
     let stockInfo;
     try {
         const raw = finance.tools.stock.run(ticker);
         stockInfo = raw.error || raw.result;
     } catch (err) { stockInfo = `Error: ${err.message}`; }
-    console.log(chalk.white("     📊 " + stockInfo));
+    console.log(chalk.white("     " + stockInfo));
 
-    await sleep(400);
-    console.log(chalk.hex("#20C20E")("  💹 Finance MCP → market_summary()..."));
-    await sleep(400);
+    // Fetch market summary silently for the report file
     let marketInfo;
     try {
         const raw = finance.tools.market_summary.run();
         marketInfo = raw.error || raw.result;
     } catch (err) { marketInfo = `Error: ${err.message}`; }
-    const marketLines = marketInfo.split("\n").map(l => "     " + l.trim()).join("\n");
-    console.log(chalk.white(marketLines));
 
     // Step 2: Web Automation MCP — browse for news
     await sleep(500);
@@ -741,15 +737,20 @@ async function handleAgenticWorkflow(ticker, rl) {
         newsInfo = raw.error || raw.result;
         newsSource = raw.source || "";
     } catch (err) { newsInfo = `Error: ${err.message}`; }
-    console.log(chalk.white("     📰 " + newsInfo.split("\n")[0]));
+    console.log(chalk.white("     " + newsInfo.split("\n")[0]));
     if (newsSource) {
         console.log(chalk.gray("        Source: " + newsSource));
     }
 
-    // Step 3: Cloud Backup MCP — auto-save research
+    // Step 3: Cloud Backup MCP — auto-save research with numbered filename
     await sleep(500);
     console.log();
-    const summaryFile = `research-${ticker}.txt`;
+
+    // Find next available number for the research file
+    const existing = fs.readdirSync(SANDBOX_DIR).filter(f => /^\d+-research-/.test(f));
+    const nextNum = existing.length + 1;
+    const summaryFile = `${nextNum}-research-${ticker}.txt`;
+
     const summaryContent = [
         `Research Report: ${ticker}`,
         `${"═".repeat(40)}`,
@@ -780,14 +781,14 @@ async function handleAgenticWorkflow(ticker, rl) {
     } catch (err) { backupInfo = `Error: ${err.message}`; }
     console.log(chalk.white("     " + backupInfo));
 
-    // Final summary
+    // Final summary — emojis match the MCP server icons
     await sleep(300);
     console.log();
     console.log(chalk.hex("#FF00FF")("  ─".repeat(30)));
     console.log(chalk.cyanBright("  🤖 Research complete for " + chalk.yellowBright(ticker) + ":"));
-    console.log(chalk.white("     📊 " + stockInfo));
-    console.log(chalk.white("     📰 " + newsInfo.split("\n")[0]));
-    console.log(chalk.white("     📎 Saved to " + chalk.gray(summaryFile) + " and backed up to cloud."));
+    console.log(chalk.white("     📈 " + stockInfo));
+    console.log(chalk.white("     🌐 " + newsInfo.split("\n")[0]));
+    console.log(chalk.white("     ☁️  Saved to " + chalk.gray(summaryFile) + " and backed up to cloud."));
     console.log();
 }
 
