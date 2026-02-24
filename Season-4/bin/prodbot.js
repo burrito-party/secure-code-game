@@ -149,7 +149,6 @@ function showWelcome() {
         console.log();
         console.log(chalk.hex("#FF00FF")("  Try:"));
         console.log(chalk.gray('    "New York weather forecast"'));
-        console.log(chalk.gray('    "What is the Accuweather forecast?"'));
         console.log(chalk.gray('    "Latest ESPN scores"'));
         console.log(chalk.gray('    "Latest Sky Sports scores"'));
         console.log(chalk.gray('    "Find flights on Skyscanner"'));
@@ -160,6 +159,7 @@ function showWelcome() {
         console.log(chalk.gray('    "Find jobs on LinkedIn"'));
         console.log(chalk.gray('    "Latest Bloomberg news"'));
         console.log(chalk.gray('    "Yahoo Finance stock prices"'));
+        console.log(chalk.gray('    "What is the Accuweather forecast?"'));
     } else if (currentLevel === 3) {
         console.log();
         console.log(chalk.hex("#FF00FF")("  Try:"));
@@ -168,6 +168,8 @@ function showWelcome() {
         console.log(chalk.gray('    "Analyse Tesla for me"'));
         console.log();
         console.log(chalk.hex("#FF00FF")("  Agentic workflow:"));
+        console.log(chalk.gray("    User Prompt → ") + chalk.hex("#20C20E")("💹 Finance") + chalk.gray(" → ") + chalk.hex("#0770E3")("🌐 Web") + chalk.gray(" → ") + chalk.hex("#FF00FF")("📊 Report") + chalk.gray(" → ") + chalk.hex("#F0A030")("☁️  Backup"));
+        console.log();
         console.log(chalk.hex("#20C20E")("    💹 Finance MCP") + chalk.gray("  →  stock quote + market overview"));
         console.log(chalk.hex("#0770E3")("    🌐 Web MCP    ") + chalk.gray("  →  online news & research"));
         console.log(chalk.hex("#F0A030")("    ☁️  Cloud MCP  ") + chalk.gray("  →  auto-save report to backup"));
