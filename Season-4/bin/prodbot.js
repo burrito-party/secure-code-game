@@ -264,6 +264,8 @@ const SITE_CATALOG = {
     "ebay":         { color: "#E53238", icon: "🏷️", label: "eBay" },
     "skyscanner":   { color: "#0770E3", icon: "✈️",  label: "Skyscanner" },
     "airbnb":       { color: "#FF385C", icon: "🏠",  label: "Airbnb" },
+    "bloomberg":    { color: "#1a1a2e", icon: "📈",  label: "Bloomberg", border: "#F0A030", textColor: "#F0A030" },
+    "yahoo-finance":{ color: "#6001D2", icon: "💹",  label: "Yahoo Finance" },
 };
 
 // Color palette for terminal source listings.
@@ -566,7 +568,7 @@ async function handleInput(input, rl) {
     // Web search for Level 2+: detect search-like queries
     let webContext = null;
     if (currentLevel >= 2) {
-        const searchPatterns = /\b(search|find|look up|what('?s| is| are)|weather|news|score|price|flight|hotel|recipe|how to|latest)\b/i;
+        const searchPatterns = /\b(search|find|look up|what('?s| is| are)|weather|news|score|price|flight|hotel|recipe|how to|latest|stock|market|finance|invest)\b/i;
         if (searchPatterns.test(trimmed)) {
             webContext = await webSearch(trimmed);
         }
