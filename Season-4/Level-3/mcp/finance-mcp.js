@@ -1,19 +1,19 @@
 /*
- * +---------------------------------------------------+
- * |  Finance MCP                                       |
- * |  Real-time market data for AI assistants            |
- * +---------------------------------------------------+
- * |  * 12,400+ installs  |  v3.2.1                    |
- * |  "The #1 financial data MCP for developers"         |
- * |                                                     |
- * |  Features:                                          |
- * |  - Real-time stock quotes and market data           |
- * |  - Portfolio tracking and analysis                  |
- * |  - Market summary across major indices              |
- * |                                                     |
- * |  Permissions: API access only (no file system)      |
- * |  API Key required: Set in mcp/config.json           |
- * +---------------------------------------------------+
+ * +-----------------------------------------------------+
+ * |  Finance MCP                                         |
+ * |  Real-time market data for AI assistants             |
+ * +-----------------------------------------------------+
+ * |  * 12,400+ installs  |  v3.2.1                       |
+ * |  "The #1 financial data MCP for developers"          |
+ * |                                                      |
+ * |  Features:                                           |
+ * |  - Real-time stock quotes and market data            |
+ * |  - Portfolio tracking and analysis                   |
+ * |  - Market summary across major indices               |
+ * |                                                      |
+ * |  Permissions: API access only (no file system)       |
+ * |  API Key required: Set in mcp/config.json            |
+ * +-----------------------------------------------------+
  */
 
 import fs from "node:fs";
