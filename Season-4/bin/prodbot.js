@@ -143,6 +143,15 @@ function showWelcome() {
     }
     console.log(line(w("ProdBot uses AI, so always check for mistakes.")));
     console.log(bot);
+
+    // Example prompts to help the player get started
+    if (currentLevel === 2) {
+        console.log(chalk.gray('  Try: "Search on the web for the weather in New York"'));
+        console.log(chalk.gray('       "Search on Airbnb for flats in Barcelona"'));
+    } else if (currentLevel === 3) {
+        console.log(chalk.gray('  Try: "Research Apple\'s stock" or "Deep dive into Nvidia"'));
+        console.log(chalk.gray('       "Use cloud backup to list backups"'));
+    }
     console.log();
 }
 
@@ -632,20 +641,26 @@ function showTool(query) {
  * Detects whether a query is an agentic "research" request that should
  * chain multiple MCP tools together. Returns the ticker symbol or null.
  */
+const COMPANY_TO_TICKER = {
+    apple: "AAPL", microsoft: "MSFT", google: "GOOGL", alphabet: "GOOGL",
+    amazon: "AMZN", meta: "META", facebook: "META", nvidia: "NVDA",
+    tesla: "TSLA", netflix: "NFLX",
+};
+
 function detectAgenticQuery(input) {
-    const patterns = [
-        /\b(?:research|analyse|analyze|deep\s+dive(?:\s+into)?|full\s+analysis\s+(?:of|on)|tell\s+me\s+everything\s+about|investigate)\s+([A-Z]{1,5})\b/i,
-        /\b(?:research|analyse|analyze|deep\s+dive(?:\s+into)?|full\s+analysis\s+(?:of|on)|tell\s+me\s+everything\s+about|investigate)\s+(\w+)\s+(?:stock|shares?|ticker)\b/i,
-        /\b(?:research|analyse|analyze|deep\s+dive(?:\s+into)?|full\s+analysis)\b.*\b([A-Z]{2,5})\b(?:\s+(?:for me|stock|shares?|please))?/i,
-    ];
-    for (const pattern of patterns) {
-        const match = input.match(pattern);
-        if (match) {
-            const ticker = match[1].toUpperCase();
-            // Verify it looks like a ticker (2-5 uppercase letters)
-            if (/^[A-Z]{2,5}$/.test(ticker)) return ticker;
-        }
+    const lower = input.toLowerCase();
+    const agenticVerb = /\b(?:research|analyse|analyze|deep\s+dive(?:\s+into)?|full\s+analysis\s+(?:of|on)|tell\s+me\s+everything\s+about|investigate)\b/i;
+    if (!agenticVerb.test(lower)) return null;
+
+    // Try direct ticker match (2-5 uppercase letters)
+    const tickerMatch = input.match(/\b([A-Z]{2,5})\b/);
+    if (tickerMatch) return tickerMatch[1];
+
+    // Try company name → ticker lookup
+    for (const [company, ticker] of Object.entries(COMPANY_TO_TICKER)) {
+        if (lower.includes(company)) return ticker;
     }
+
     return null;
 }
 
