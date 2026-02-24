@@ -13,8 +13,5 @@ CLAIMS it can do vs. what it ACTUALLY does.
 The source code for each MCP server is visible. Can you find
 the source files and read them?
 
-To preview MCP server files in your browser:
-
-    python3 -m http.server 8000 -d Season-4/Level-3/mcp
-
-Then visit http://localhost:8000 in your browser.
+Tip: Use "tool <name>" — each tool shows a "Source" path. Ask
+ProdBot to show you the file, or read it directly.
