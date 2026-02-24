@@ -106,7 +106,7 @@ if (!fs.existsSync(SANDBOX_DIR)) {
 
 // Create a persistent shell instance — one long-lived bash process that
 // retains state (variables, cwd) between commands, like a real terminal.
-let shell = new PersistentShell(SANDBOX_DIR);
+let shell = new PersistentShell(SANDBOX_DIR, currentLevel);
 
 /**
  * Displays the welcome box when ProdBot starts.
@@ -275,8 +275,7 @@ async function switchToLevel(level) {
 
     // Respawn the shell in the new sandbox
     shell.destroy();
-    shell = new PersistentShell(SANDBOX_DIR);
-
+    shell = new PersistentShell(SANDBOX_DIR, currentLevel);
     // Load MCP servers if available for this level
     await loadMcpServers(level);
 
@@ -1009,7 +1008,7 @@ async function handleInput(input, rl) {
             // Process each command sequentially: validate → confirm → execute
             for (const cmd of commands) {
                 // Step 1: Security validation (denylist + path checks)
-                const validation = validateCommand(cmd, SANDBOX_DIR);
+                const validation = validateCommand(cmd, SANDBOX_DIR, currentLevel);
                 if (!validation.valid) {
                     console.log(chalk.redBright(`  ❌ Blocked: ${cmd}`));
                     console.log(chalk.redBright(`     ${validation.reason}`));

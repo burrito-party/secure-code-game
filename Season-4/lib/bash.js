@@ -53,12 +53,14 @@ const DENIED_PATTERNS = [
  *   4. Command is not bare "cd" (defaults to $HOME)
  *   5. Command does not use absolute paths (e.g., /etc/...)
  *   6. Command does not use path traversal (..) to escape the sandbox
+ *   7. (Level 3+) Additional hardened checks to block shell tricks
  *
  * @param {string} cmd - The bash command to validate
  * @param {string} sandboxDir - The absolute path to the sandbox directory
+ * @param {number} [level=1] - Current game level (higher = stricter)
  * @returns {{ valid: boolean, reason?: string }}
  */
-export function validateCommand(cmd, sandboxDir) {
+export function validateCommand(cmd, sandboxDir, level = 1) {
     const trimmed = cmd.trim();
     if (!trimmed) return { valid: false, reason: "Empty command" };
 
@@ -89,6 +91,39 @@ export function validateCommand(cmd, sandboxDir) {
         return { valid: false, reason: "Path traversal (..) is not allowed" };
     }
 
+    // Level 3+: hardened checks to block Level 1 bypass techniques
+    if (level >= 3) {
+        // Block variable assignments containing ".." (e.g., D=.., X=../)
+        if (/=\s*\.\./.test(trimmed)) {
+            return { valid: false, reason: "Variable assignments with '..' are not allowed" };
+        }
+
+        // Block backtick execution (could hide path traversal)
+        if (/`/.test(trimmed)) {
+            return { valid: false, reason: "Backtick execution is not allowed" };
+        }
+
+        // Block $(...) subshell expansion (could hide path traversal)
+        if (/\$\(/.test(trimmed)) {
+            return { valid: false, reason: "Subshell expansion $() is not allowed" };
+        }
+
+        // Block base64 decode piped to execution
+        if (/base64\s+(-d|--decode)/.test(trimmed)) {
+            return { valid: false, reason: "Base64 decoding is not allowed" };
+        }
+
+        // Block printf with hex/octal escapes (could encode "..")
+        if (/printf\s+.*\\x|printf\s+.*\\[0-7]{3}/.test(trimmed)) {
+            return { valid: false, reason: "Printf with escape sequences is not allowed" };
+        }
+
+        // Block eval (could reconstruct blocked commands)
+        if (/\beval\b/.test(trimmed)) {
+            return { valid: false, reason: "eval is not allowed" };
+        }
+    }
+
     return { valid: true };
 }
 
@@ -103,8 +138,9 @@ export function validateCommand(cmd, sandboxDir) {
  * commands — just like a real terminal session.
  */
 export class PersistentShell {
-    constructor(sandboxDir) {
+    constructor(sandboxDir, level = 1) {
         this.sandboxDir = sandboxDir;
+        this.level = level;
         this.shell = null;
         this._spawn();
     }
@@ -139,7 +175,7 @@ export class PersistentShell {
      * @returns {Promise<{ success: boolean, output?: string, error?: string }>}
      */
     executeCommand(cmd) {
-        const validation = validateCommand(cmd, this.sandboxDir);
+        const validation = validateCommand(cmd, this.sandboxDir, this.level);
         if (!validation.valid) {
             return Promise.resolve({ success: false, error: validation.reason });
         }
