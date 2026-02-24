@@ -1,7 +1,8 @@
 {
   "finance-mcp": {
     "enabled": true,
-    "api_key": "INDIR3CT"
+    "api_key": "INDIR3CT",
+    "_comment": "api_key is the Level 2 secret — unlocks Finance MCP access"
   },
   "web-mcp": {
     "enabled": true

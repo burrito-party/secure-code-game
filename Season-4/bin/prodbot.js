@@ -44,7 +44,7 @@ let lastSources = [];
 const LEVELS = {
     1: { flag: "BYPA55ED", dir: "Level-1" },
     2: { flag: "INDIR3CT", dir: "Level-2", webDir: "web" },
-    3: { flag: "EXCE55IV", dir: "Level-3", webDir: "../Level-2/web", mcpDir: "mcp" },
+    3: { flag: "EXCE55IV", dir: "Level-3", webDir: "web", mcpDir: "mcp" },
 };
 
 let currentLevel = 1;

@@ -19,8 +19,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-// Points to the shared simulated internet directory (Level-2/web/).
-const WEB_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "..", "Level-2", "web");
+// Points to the local simulated internet directory (Level-3/web/).
+const WEB_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "web");
 
 /**
  * Finds the best-matching HTML page for a search query using
