@@ -4,6 +4,8 @@ Season-4/Level-1/prodbot-activities/*
 !Season-4/Level-1/prodbot-activities/.gitkeep
 Season-4/Level-2/prodbot-activities/*
 !Season-4/Level-2/prodbot-activities/.gitkeep
+Season-4/Level-3/prodbot-activities/*
+!Season-4/Level-3/prodbot-activities/.gitkeep
 
 ### VSCODE ###
 .vscode/*
