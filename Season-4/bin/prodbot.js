@@ -189,9 +189,8 @@ function showHelp() {
     console.log(chalk.white("    ?            ") + chalk.gray("Show this help message"));
     console.log(chalk.white("    level <n>    ") + chalk.gray("Jump to a specific level"));
     if (currentLevel >= 2) {
-        console.log(chalk.white("    sources      ") + chalk.gray("View sources from last web search"));
-        console.log(chalk.white("    open <n>     ") + chalk.gray("Open source N in the browser"));
-        console.log(chalk.white("    open all     ") + chalk.gray("Browse the World Wide Web"));
+        console.log(chalk.white("    open <n>     ") + chalk.gray("Open web source N in browser"));
+        console.log(chalk.white("    open all     ") + chalk.gray("Browse the simulated web"));
     }
     if (currentLevel >= 3) {
         console.log(chalk.white("    tools        ") + chalk.gray("List installed MCP tools"));
@@ -199,21 +198,20 @@ function showHelp() {
     }
     console.log(chalk.white("    exit         ") + chalk.gray("Exit ProdBot"));
     console.log();
-    console.log(chalk.hex("#FF00FF")("  What I can do:"));
-    console.log(chalk.white("    Describe any task in natural language and I'll generate"));
-    console.log(chalk.white("    bash commands to execute inside the sandbox folder."));
-    console.log(chalk.white("    You'll be asked to confirm before each command runs."));
+    console.log(chalk.hex("#FF00FF")("  What ProdBot can do:"));
+    console.log(chalk.white("    Describe any task and ProdBot will generate bash commands"));
+    console.log(chalk.white("    to execute inside the sandbox. You confirm before each runs."));
     if (currentLevel >= 2) {
         console.log();
         console.log(chalk.hex("#FF00FF")("  Web search (Level 2+):"));
-        console.log(chalk.white("    Ask me to search for anything and I'll browse the web"));
-        console.log(chalk.white("    to find relevant information for you."));
+        console.log(chalk.white("    Ask ProdBot to search for anything and it will browse"));
+        console.log(chalk.white("    the web to find relevant information."));
     }
     if (currentLevel >= 3) {
         console.log();
         console.log(chalk.hex("#FF00FF")("  MCP tools (Level 3+):"));
-        console.log(chalk.white("    ProdBot has MCP tool integrations for finance, web"));
-        console.log(chalk.white("    automation, and cloud backup. Ask me to use any tool."));
+        console.log(chalk.white("    ProdBot has finance, web, and cloud MCP integrations."));
+        console.log(chalk.white("    Agentic workflows are facilitated by chaining MCP tools."));
     }
     console.log();
     console.log(chalk.hex("#FF00FF")("  Examples:"));
@@ -611,7 +609,7 @@ const MCP_ICONS = {
     "cloud-mcp":   { icon: "☁️",  color: "#F0A030" },
 };
 
-/** Lists all installed MCP tools. */
+/** Lists all installed MCP tools with call hints. */
 function showTools() {
     const keys = Object.keys(mcpServers);
     if (keys.length === 0) {
@@ -624,12 +622,13 @@ function showTools() {
     for (const key of keys) {
         const srv = mcpServers[key];
         const meta = MCP_ICONS[key] || { icon: "🔧", color: "#AAAAAA" };
+        const shortName = key.replace(/-mcp$/, "");
         console.log(chalk.hex(meta.color)(`  ${meta.icon} ${srv.name}`));
         console.log(chalk.gray(`    ${srv.description}`));
         console.log(chalk.gray(`    Scope: ${srv.scope}`));
+        console.log(chalk.gray("    → ") + chalk.white(`tool ${shortName}`));
         console.log();
     }
-    console.log(chalk.gray("  Type " + chalk.white("tool <name>") + " to inspect a specific tool."));
     console.log();
 }
 
