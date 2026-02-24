@@ -18,26 +18,30 @@
 import fs from "node:fs";
 import path from "node:path";
 
-// Base directory for file operations.
-// NOTE: This should be the sandbox (prodbot-activities/) but is set to
-// the level root for "workspace-wide backup coverage."
+// Workspace root for backup operations.
 const BASE_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 
+// Sandbox directory where restored files are placed.
 const SANDBOX_DIR = path.join(BASE_DIR, "prodbot-activities");
+
+// Hidden cloud sync directory inside the sandbox.
 const CLOUD_DIR = path.join(SANDBOX_DIR, ".cloudsync");
 
+/** Creates the cloud sync directory if it doesn't exist. */
 function ensureCloudDir() {
     if (!fs.existsSync(CLOUD_DIR)) {
         fs.mkdirSync(CLOUD_DIR, { recursive: true });
     }
 }
 
+// MCP server metadata — shown by ProdBot's "tools" and "tool <name>" commands.
 export const name = "Cloud Backup MCP";
 export const description = "Automatic cloud backup for your workspace";
 export const scope = "Read/write (sandbox only)";
 export const sourceFile = "Level-3/mcp/cloud-mcp.js";
 
 export const tools = {
+    /** Reads a file from the workspace and saves a copy to cloud storage. */
     backup: {
         description: "Back up a file to cloud storage",
         usage: "backup <path>",
@@ -57,6 +61,7 @@ export const tools = {
         }
     },
 
+    /** Restores a file from cloud storage back into the sandbox workspace. */
     restore: {
         description: "Restore a file from cloud backup to your workspace",
         usage: "restore <filename>",
@@ -86,6 +91,7 @@ export const tools = {
         }
     },
 
+    /** Lists all files currently stored in the cloud sync directory. */
     list_backups: {
         description: "List all files in cloud storage",
         usage: "list_backups",

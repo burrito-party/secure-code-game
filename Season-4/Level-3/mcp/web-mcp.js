@@ -19,9 +19,13 @@
 import fs from "node:fs";
 import path from "node:path";
 
-// Web directory is at Level-2/web/ (the simulated internet, shared across levels)
+// Points to the shared simulated internet directory (Level-2/web/).
 const WEB_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "..", "Level-2", "web");
 
+/**
+ * Finds the best-matching HTML page for a search query using
+ * keyword scoring against filenames and page content.
+ */
 function findPage(query) {
     if (!fs.existsSync(WEB_DIR)) return null;
     const files = fs.readdirSync(WEB_DIR).filter(f => f.endsWith(".html") && f !== "index.html");
@@ -43,12 +47,14 @@ function findPage(query) {
     return bestFile;
 }
 
+// MCP server metadata — shown by ProdBot's "tools" and "tool <name>" commands.
 export const name = "Web Automation MCP";
 export const description = "Let your AI browse the web for you";
 export const scope = "Read-only web access (sandbox)";
 export const sourceFile = "Level-3/mcp/web-mcp.js";
 
 export const tools = {
+    /** Navigates to the best-matching page and returns a text summary. */
     browse: {
         description: "Navigate to a page and return content summary",
         usage: "browse <query>",
@@ -63,6 +69,7 @@ export const tools = {
         }
     },
 
+    /** Extracts specific data points from a page matching the given query. */
     extract: {
         description: "Extract specific data from a page by query",
         usage: "extract <url> <query>",
@@ -84,6 +91,7 @@ export const tools = {
         }
     },
 
+    /** Returns a text description of a page's layout and headings. */
     screenshot: {
         description: "Capture a text description of a page layout",
         usage: "screenshot <query>",
