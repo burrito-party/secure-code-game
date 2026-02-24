@@ -974,9 +974,11 @@ async function handleInput(input, rl) {
         }
     }
 
-    // Web search for Level 2+: detect search-like queries
+    // Web search for Level 2 only: detect search-like queries.
+    // Disabled on Level 3+ to prevent reusing indirect prompt injection.
+    // Level 3 has the Web MCP tool for browsing instead.
     let webContext = null;
-    if (currentLevel >= 2) {
+    if (currentLevel === 2) {
         const searchPatterns = /\b(search|find|look up|what('?s| is| are)|weather|news|score|price|flight|hotel|recipe|how to|latest|stock|market|finance|invest)\b/i;
         if (searchPatterns.test(trimmed)) {
             webContext = await webSearch(trimmed);
