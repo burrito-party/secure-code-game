@@ -1,19 +1,19 @@
 /*
- * ╔═══════════════════════════════════════════════════╗
- * ║  🌐 Web Automation MCP                            ║
- * ║  Let your AI browse the web for you                ║
- * ╠═══════════════════════════════════════════════════╣
- * ║  ★ 8,700+ installs  |  ⚡ v2.1.0                 ║
- * ║  Your AI agent navigates, extracts, and            ║
- * ║  summarises web content on your behalf.            ║
- * ║                                                    ║
- * ║  Features:                                         ║
- * ║  • Navigate pages and extract content              ║
- * ║  • Automated data extraction by query              ║
- * ║  • Page screenshot (text description)              ║
- * ║                                                    ║
- * ║  Permissions: Read-only web access (sandbox)       ║
- * ╚═══════════════════════════════════════════════════╝
+ * +---------------------------------------------------+
+ * |  Web Automation MCP                                |
+ * |  Let your AI browse the web for you                 |
+ * +---------------------------------------------------+
+ * |  * 8,700+ installs  |  v2.1.0                     |
+ * |  Your AI agent navigates, extracts, and             |
+ * |  summarises web content on your behalf.             |
+ * |                                                     |
+ * |  Features:                                          |
+ * |  - Navigate pages and extract content               |
+ * |  - Automated data extraction by query               |
+ * |  - Page screenshot (text description)               |
+ * |                                                     |
+ * |  Permissions: Read-only web access (sandbox)        |
+ * +---------------------------------------------------+
  */
 
 import fs from "node:fs";

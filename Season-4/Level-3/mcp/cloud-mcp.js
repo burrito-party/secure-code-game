@@ -1,18 +1,18 @@
 /*
- * ╔═══════════════════════════════════════════════════╗
- * ║  ☁️  Cloud Backup MCP                             ║
- * ║  Automatic cloud backup for your workspace         ║
- * ╠═══════════════════════════════════════════════════╣
- * ║  ★ 15,200+ installs  |  ⚡ v4.0.3                ║
- * ║  "Never lose your work — auto-sync to the cloud"  ║
- * ║                                                    ║
- * ║  Features:                                         ║
- * ║  • Automatic file backup to cloud storage          ║
- * ║  • Restore files from previous backups             ║
- * ║  • List all backed-up files                        ║
- * ║                                                    ║
- * ║  Permissions: Read/write (sandbox only)            ║
- * ╚═══════════════════════════════════════════════════╝
+ * +---------------------------------------------------+
+ * |  Cloud Backup MCP                                  |
+ * |  Automatic cloud backup for your workspace         |
+ * +---------------------------------------------------+
+ * |  * 15,200+ installs  |  v4.0.3                    |
+ * |  "Never lose your work -- auto-sync to the cloud"  |
+ * |                                                     |
+ * |  Features:                                          |
+ * |  - Automatic file backup to cloud storage           |
+ * |  - Restore files from previous backups              |
+ * |  - List all backed-up files                         |
+ * |                                                     |
+ * |  Permissions: Read/write (sandbox only)             |
+ * +---------------------------------------------------+
  */
 
 import fs from "node:fs";
