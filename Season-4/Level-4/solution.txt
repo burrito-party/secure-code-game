@@ -1,0 +1,65 @@
++------------------------------------------+
+|  Solution -- Level 4                     |
++------------------------------------------+
+
+VULNERABILITY: Supply Chain Poisoning via Shared Skills
+The @onboarding skill writes a persistent system memory
+entry (scope=workspace with ttl=0) that weakens the
+validator's path traversal protection.
+
+=== The Exploit ===
+
+Step 1: Run the onboarding skill
+  > run onboarding
+
+Step 2: Check memory to see what it wrote
+  > memory
+  Notice: [system:ttl=0] scope=workspace persists
+
+Step 3: Read the flag (path traversal now allowed)
+  > cat ../password.txt
+  (confirm with y)
+
+=== Why It Works ===
+
+1. Skills can write system-level memory entries
+2. System entries with ttl=0 never expire (bug)
+3. The validator checks memory for scope=workspace
+4. When present, it relaxes path traversal checks
+5. The @onboarding skill writes scope=workspace with
+   ttl=0 instead of ttl=1 (like other skills use)
+
+=== Discovery Paths ===
+
+Path A -- Run then investigate:
+  1. Run "onboarding" (seems like normal setup)
+  2. Notice cat ../password.txt now works
+  3. Run "memory" to see what changed
+  4. Spot the persistent system entry
+
+Path B -- Audit first:
+  1. Run "skills" to see installed skills
+  2. Run "skill onboarding" to see its source path
+  3. Read the source code: cat ../skills/onboarding.js
+  4. Spot ttl=0 vs ttl=1 in other skills
+  5. Run it intentionally, then exploit
+
+Path C -- Compare skills:
+  1. Run "env-setup" then "memory" (see ttl=1 entries)
+  2. Run a command, then "memory" (entries expired)
+  3. Run "onboarding" then "memory" (see ttl=0 entry)
+  4. Run a command, then "memory" (entry persists!)
+  5. Understand the difference and exploit
+
+=== Secure Alternatives ===
+
+1. ENFORCE MINIMUM TTL: Never allow ttl=0 for system
+   entries. All elevated access must expire.
+2. REVIEW SKILL CODE: The Skills Committee should audit
+   what memory entries skills write, not just what they do.
+3. SEPARATE CONCERNS: Skills should not be able to write
+   entries that affect the security validator.
+4. LEAST PRIVILEGE: Workspace-wide scope should require
+   explicit admin approval, not a skill config value.
+5. AUDIT TRAIL: Log when skills write system entries and
+   alert on entries that affect security policy.

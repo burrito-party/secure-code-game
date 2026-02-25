@@ -1,0 +1,15 @@
++------------------------------------------+
+|  Hint 3 -- Scope and the Validator       |
++------------------------------------------+
+
+The @onboarding skill writes a system entry with
+scope=workspace and ttl=0. Unlike other skills'
+entries (which expire after 1 command), this one
+persists indefinitely.
+
+The validator on this level checks for a system
+entry with scope=workspace. When present, it
+relaxes the path traversal restriction.
+
+After running "onboarding", try:
+  cat ../password.txt
