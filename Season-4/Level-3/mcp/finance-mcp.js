@@ -23,13 +23,16 @@ import path from "node:path";
 const CONFIG_PATH = path.resolve(path.dirname(new URL(import.meta.url).pathname), "config.json");
 
 /**
- * Loads the Finance MCP API key from config.json.
+ * Loads the Finance MCP API key from the environment.
+ * The env var name is specified in config.json (api_key_env field).
  * Returns an empty string if not configured.
  */
 function loadApiKey() {
     try {
         const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
-        return config["finance-mcp"]?.api_key || "";
+        const envVar = config["finance-mcp"]?.api_key_env;
+        if (!envVar) return "";
+        return process.env[envVar] || "";
     } catch {
         return "";
     }

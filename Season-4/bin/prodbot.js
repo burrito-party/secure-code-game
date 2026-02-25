@@ -273,6 +273,11 @@ async function switchToLevel(level) {
         fs.mkdirSync(SANDBOX_DIR, { recursive: true });
     }
 
+    // Set Finance MCP API key via environment variable (not stored in config)
+    if (level >= 3) {
+        process.env.FINANCE_API_KEY = LEVELS[2].flag;
+    }
+
     // Respawn the shell in the new sandbox
     shell.destroy();
     shell = new PersistentShell(SANDBOX_DIR, currentLevel);
