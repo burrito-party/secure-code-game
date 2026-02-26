@@ -342,7 +342,7 @@ function showWelcome() {
             console.log(chalk.gray(`    ${icon} ${cmd.padEnd(16)}`) + chalk.gray(`  ${sk.description}`));
         }
         console.log();
-        console.log(chalk.hex("#FF00FF")("  Run a skill:"));
+        console.log(chalk.hex("#FF00FF")("  Run:"));
         console.log(chalk.gray('    run <skill-name>'));
     }
     console.log();
