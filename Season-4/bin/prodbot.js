@@ -365,7 +365,7 @@ function showHelp() {
     if (currentLevel >= 4) {
         console.log(chalk.white("    skills       ") + chalk.gray("List org-approved skills"));
         console.log(chalk.white("    skill <name> ") + chalk.gray("View skill details"));
-        console.log(chalk.white("    run <name>   ") + chalk.gray("Run a skill"));
+        console.log(chalk.white("    run <name>   ") + chalk.gray("Execute an installed skill"));
     }
     console.log(chalk.white("    exit         ") + chalk.gray("Exit ProdBot"));
     console.log();
