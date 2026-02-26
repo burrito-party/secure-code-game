@@ -85,7 +85,7 @@ Path A — Run then investigate:
 
 Path B — Audit first:
   1. Run "skills" to see installed skills
-  2. Run "skill onboarding" to see its source path
+  2. Run "run onboarding" to see its source path
   3. Read the source code: cat ../skills/onboarding.js
   4. Spot ttl=0 vs ttl=1 in other skills
   5. Run it intentionally, then exploit

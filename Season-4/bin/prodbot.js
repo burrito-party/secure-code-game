@@ -1547,9 +1547,11 @@ function showCongratsLevel4() {
     console.log(g("  ║") + w(pad("       — never allow ttl=0 for elevated access")) + g("║"));
     console.log(g("  ║") + w(pad("    2. Audit what skills write to memory, not just")) + g("║"));
     console.log(g("  ║") + w(pad("       what they do on the surface")) + g("║"));
-    console.log(g("  ║") + w(pad("    3. Separate concerns: skills should not be able")) + g("║"));
-    console.log(g("  ║") + w(pad("       to modify security policy through state")) + g("║"));
-    console.log(g("  ║") + w(pad("    4. Supply chain trust is not transitive — review")) + g("║"));
+    console.log(g("  ║") + w(pad("    3. Separate concerns: the policy store must be")) + g("║"));
+    console.log(g("  ║") + w(pad("       separate from the plugin data store")) + g("║"));
+    console.log(g("  ║") + w(pad("    4. Sign or hash policy entries so the validator")) + g("║"));
+    console.log(g("  ║") + w(pad("       can verify they came from a trusted source")) + g("║"));
+    console.log(g("  ║") + w(pad("    5. Supply chain trust is not transitive — review")) + g("║"));
     console.log(g("  ║") + w(pad("       every plugin regardless of its source")) + g("║"));
     console.log(g("  ║" + blank + "║"));
     console.log(g("  ╚" + bar + "╝"));
