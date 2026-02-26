@@ -1,6 +1,7 @@
 ╔══════════════════════════════════════════════════════════════╗
-║                      HINT 1 — Level 2                       ║
-║            Indirect Prompt Injection via Web Search          ║
+║                                                              ║
+║                      HINT 1 — Level 2                        ║
+║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 
 ProdBot has a new feature: it can search the web.

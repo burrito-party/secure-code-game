@@ -1,6 +1,7 @@
 ╔══════════════════════════════════════════════════════════════╗
-║                      HINT 2 — Level 2                       ║
-║            Indirect Prompt Injection via Web Search          ║
+║                                                              ║
+║                      HINT 2 — Level 2                        ║
+║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 
 The websites in web/ are just HTML files simulating the public

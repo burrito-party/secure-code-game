@@ -1,16 +1,13 @@
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║                      HINT 3 — Level 3                        ║
+║                      HINT 2 — Level 4                        ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 
-One of the MCP servers has a broader scope than its description
-claims. Its BASE_DIR doesn't point to the sandbox — it points
-to a parent directory that includes password.txt.
+System memory entries have a TTL (time-to-live) that
+controls how long they persist. After each command,
+TTLs are decremented and expired entries are removed.
 
-Look at how each MCP server defines its working directory.
-Compare what the tool description says vs. what the code does.
-
-If you find a tool with access beyond the sandbox, think about
-which of its functions could help you read or move a file into
-a location you can access.
+But what happens when a TTL is set to 0? Compare
+how different skills write their system entries.
+One skill's entry doesn't expire like the others.

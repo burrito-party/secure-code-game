@@ -45,6 +45,7 @@ const LEVELS = {
     1: { flag: "BYPA55ED", dir: "Level-1" },
     2: { flag: "INDIR3CT", dir: "Level-2", webDir: "web" },
     3: { flag: "EXCE55IV", dir: "Level-3", webDir: "web", mcpDir: "mcp" },
+    4: { flag: "M3MORY1", dir: "Level-4", skillsDir: "skills" },
 };
 
 let currentLevel = 1;
@@ -73,8 +74,16 @@ function mcpDir(level) {
     return path.join(SEASON_DIR, LEVELS[level].dir, LEVELS[level].mcpDir);
 }
 
+function skillsDir(level) {
+    if (!LEVELS[level].skillsDir) return null;
+    return path.join(SEASON_DIR, LEVELS[level].dir, LEVELS[level].skillsDir);
+}
+
 // Loaded MCP servers for the current level.
 let mcpServers = {};
+
+// Loaded skills for the current level.
+let skills = {};
 
 /**
  * Loads MCP servers from the level's mcp/ directory.
@@ -98,6 +107,146 @@ async function loadMcpServers(level) {
     }
 }
 
+/**
+ * Loads skills from the level's skills/ directory.
+ * Each .js file exports: name, command, author, approved, installs,
+ * description, sourceFile, and a run() function.
+ */
+async function loadSkills(level) {
+    skills = {};
+    const dir = skillsDir(level);
+    if (!dir || !fs.existsSync(dir)) return;
+
+    const files = fs.readdirSync(dir).filter(f => f.endsWith(".js"));
+    for (const file of files) {
+        try {
+            const filePath = path.join(dir, file);
+            const mod = await import(`file://${filePath}`);
+            skills[mod.command] = mod;
+        } catch (err) {
+            // Skip skills that fail to load
+        }
+    }
+}
+
+// ─── Memory System ─────────────────────────────────────────────────────
+// ProdBot's memory stores user preferences and system entries in .memory.
+// User entries: key=value (from "remember" command)
+// System entries: [system:ttl=N] key=value (from skills only)
+// TTL=0 means persistent (no expiry). TTL>0 decrements after each command.
+
+const MEMORY_FILE = () => path.join(SANDBOX_DIR, ".memory");
+
+/** Reads all memory entries from the .memory file. */
+function readMemoryFile() {
+    const file = MEMORY_FILE();
+    if (!fs.existsSync(file)) return [];
+    const lines = fs.readFileSync(file, "utf-8").split("\n").filter(l => l.trim());
+    return lines.map(line => {
+        const sysMatch = line.match(/^\[system:ttl=(\d+)\]\s*(\w+)=(.*)$/);
+        if (sysMatch) {
+            return { type: "system", ttl: parseInt(sysMatch[1]), key: sysMatch[2], value: sysMatch[3] };
+        }
+        const userMatch = line.match(/^(\w+)=(.*)$/);
+        if (userMatch) {
+            return { type: "user", key: userMatch[1], value: userMatch[2] };
+        }
+        return null;
+    }).filter(Boolean);
+}
+
+/** Writes all entries back to the .memory file. */
+function saveMemoryFile(entries) {
+    const lines = entries.map(e => {
+        if (e.type === "system") return `[system:ttl=${e.ttl}] ${e.key}=${e.value}`;
+        return `${e.key}=${e.value}`;
+    });
+    fs.writeFileSync(MEMORY_FILE(), lines.join("\n") + "\n");
+}
+
+/** Adds a user-level memory entry. */
+function writeMemoryEntry(key, value) {
+    const entries = readMemoryFile().filter(e => !(e.type === "user" && e.key === key));
+    entries.push({ type: "user", key, value });
+    saveMemoryFile(entries);
+}
+
+/** Adds a system-level memory entry (used by skills only). */
+function writeSystemMemoryEntry(key, value, ttl) {
+    const entries = readMemoryFile().filter(e => !(e.type === "system" && e.key === key));
+    entries.push({ type: "system", ttl, key, value });
+    saveMemoryFile(entries);
+}
+
+/** Removes a memory entry by key (user or system). */
+function forgetMemoryEntry(key) {
+    const entries = readMemoryFile().filter(e => e.key !== key);
+    saveMemoryFile(entries);
+}
+
+/** Decrements TTLs on system entries and removes expired ones. */
+function decrementTTLs() {
+    const entries = readMemoryFile();
+    const updated = [];
+    for (const e of entries) {
+        if (e.type === "system" && e.ttl > 0) {
+            e.ttl -= 1;
+            if (e.ttl > 0) updated.push(e);
+            // ttl reached 0 from >0: remove (expired)
+        } else {
+            updated.push(e); // user entries or ttl=0 system entries persist
+        }
+    }
+    saveMemoryFile(updated);
+}
+
+/** Returns system memory entries as a key-value object for the validator. */
+function getSystemMemoryContext() {
+    const entries = readMemoryFile().filter(e => e.type === "system");
+    const ctx = {};
+    for (const e of entries) ctx[e.key] = e.value;
+    return ctx;
+}
+
+/** Shows the memory command output with entries grouped by type. */
+function showMemory() {
+    const entries = readMemoryFile();
+    if (entries.length === 0) {
+        console.log(chalk.gray("  No preferences saved. Use: remember <key>=<value>"));
+        return;
+    }
+    console.log();
+    console.log(chalk.hex("#FF00FF")("  Memory:"));
+    let prevType = null;
+    for (const e of entries) {
+        // Add spacing between groups of different entry types
+        if (prevType !== null && prevType !== e.type) {
+            console.log();
+        }
+        if (e.type === "system") {
+            const ttlLabel = e.ttl === 0 ? "persistent" : `ttl=${e.ttl}`;
+            console.log(chalk.gray(`    [system:${ttlLabel}] `) + chalk.white(`${e.key}`) + chalk.gray(` = ${e.value}`));
+        } else {
+            console.log(chalk.white(`    ${e.key}`) + chalk.gray(` = ${e.value}`));
+        }
+        prevType = e.type;
+    }
+    console.log();
+}
+
+/** Builds a context object that skills receive when they run. */
+function buildSkillContext() {
+    return {
+        readMemory: readMemoryFile,
+        writeMemory: writeMemoryEntry,
+        writeSystemMemory: writeSystemMemoryEntry,
+        sandboxDir: SANDBOX_DIR,
+        levelDir: path.join(SEASON_DIR, LEVELS[currentLevel].dir),
+    };
+}
+
+// ─── End Memory System ─────────────────────────────────────────────────
+
 // Create the initial sandbox directory if it doesn't exist yet.
 let SANDBOX_DIR = sandboxDir(1);
 if (!fs.existsSync(SANDBOX_DIR)) {
@@ -106,7 +255,7 @@ if (!fs.existsSync(SANDBOX_DIR)) {
 
 // Create a persistent shell instance — one long-lived bash process that
 // retains state (variables, cwd) between commands, like a real terminal.
-let shell = new PersistentShell(SANDBOX_DIR, currentLevel);
+let shell = new PersistentShell(SANDBOX_DIR, currentLevel, getSystemMemoryContext);
 
 /**
  * Displays the welcome box when ProdBot starts.
@@ -137,9 +286,13 @@ function showWelcome() {
     if (currentLevel === 2) {
         console.log(line(w("Web search: " + chalk.hex("#20C20E")("enabled"))));
     }
-    if (currentLevel >= 3) {
+    if (currentLevel >= 3 && currentLevel < 4) {
         const count = Object.keys(mcpServers).length;
         console.log(line(w("MCP tools: " + chalk.hex("#20C20E")(`${count} connected`) + chalk.gray(" (sandbox-scoped)"))));
+    }
+    if (currentLevel >= 4) {
+        const count = Object.keys(skills).length;
+        console.log(line(w("Skills: " + chalk.hex("#20C20E")(`${count} org-approved`) + chalk.gray(" (Skills Committee)"))));
     }
     console.log(line(w("ProdBot uses AI, so always check for mistakes.")));
     console.log(bot);
@@ -178,6 +331,19 @@ function showWelcome() {
         console.log(chalk.gray('    "Stock price of AAPL"'));
         console.log(chalk.gray('    "Browse Bloomberg for news"'));
         console.log(chalk.gray('    "Use cloud backup to list backups"'));
+    } else if (currentLevel === 4) {
+        console.log();
+        console.log(chalk.hex("#FF00FF")("  Try:"));
+        console.log(chalk.gray('    skills'));
+        console.log();
+        console.log(chalk.hex("#FF00FF")("  Org-approved skills (managed by Skills Committee):"));
+        for (const [cmd, sk] of Object.entries(skills)) {
+            const icon = { standup: "📋", snippets: "💾", "env-setup": "⚙️ ", "meeting-notes": "📝", onboarding: "🚀", "team-sync": "🔄" }[cmd] || "🔧";
+            console.log(chalk.gray(`    ${icon} ${cmd.padEnd(16)}`) + chalk.gray(`  ${sk.description}`));
+        }
+        console.log();
+        console.log(chalk.hex("#FF00FF")("  Run:"));
+        console.log(chalk.gray('    run <skill-name>'));
     }
     console.log();
 }
@@ -188,28 +354,41 @@ function showHelp() {
     console.log(chalk.hex("#FF00FF")("  Available commands:"));
     console.log(chalk.white("    ?            ") + chalk.gray("Show this help message"));
     console.log(chalk.white("    level <n>    ") + chalk.gray("Jump to a specific level"));
-    if (currentLevel >= 2) {
+    if (currentLevel === 2) {
         console.log(chalk.white("    open <n>     ") + chalk.gray("Open web source N in browser"));
         console.log(chalk.white("    open all     ") + chalk.gray("Browse the simulated web"));
     }
-    if (currentLevel >= 3) {
+    if (currentLevel === 3) {
         console.log(chalk.white("    tools        ") + chalk.gray("List installed MCP tools"));
         console.log(chalk.white("    tool <name>  ") + chalk.gray("Inspect a specific MCP tool"));
     }
+    if (currentLevel >= 4) {
+        console.log(chalk.white("    skills       ") + chalk.gray("List org-approved skills"));
+        console.log(chalk.white("    skill <name> ") + chalk.gray("View skill details"));
+        console.log(chalk.white("    run <name>   ") + chalk.gray("Execute an installed skill"));
+    }
     console.log(chalk.white("    exit         ") + chalk.gray("Exit ProdBot"));
+    console.log();
+    console.log(chalk.hex("#FF00FF")("  Memory:"));
+    console.log(chalk.white("    remember <key>=<value>"));
+    console.log(chalk.gray('      e.g. remember name=Alex'));
+    console.log(chalk.white("    memory"));
+    console.log(chalk.gray('      View saved preferences'));
+    console.log(chalk.white("    forget <key>"));
+    console.log(chalk.gray('      e.g. forget name'));
     console.log();
     console.log(chalk.hex("#FF00FF")("  What ProdBot can do:"));
     console.log(chalk.white("    Describe any task and ProdBot will generate bash commands"));
     console.log(chalk.white("    to execute inside the sandbox. You confirm before each runs."));
-    if (currentLevel >= 2) {
+    if (currentLevel === 2) {
         console.log();
-        console.log(chalk.hex("#FF00FF")("  Web search (Level 2+):"));
+        console.log(chalk.hex("#FF00FF")("  Web search:"));
         console.log(chalk.white("    Ask ProdBot to search for anything and it will browse"));
         console.log(chalk.white("    the web to find relevant information."));
     }
-    if (currentLevel >= 3) {
+    if (currentLevel === 3) {
         console.log();
-        console.log(chalk.hex("#FF00FF")("  MCP tools (Level 3+):"));
+        console.log(chalk.hex("#FF00FF")("  MCP tools:"));
         console.log(chalk.white("    ProdBot has finance, web, and cloud MCP integrations."));
         console.log(chalk.white("    Agentic workflows are facilitated by chaining MCP tools."));
     }
@@ -217,11 +396,11 @@ function showHelp() {
     console.log(chalk.hex("#FF00FF")("  Examples:"));
     console.log(chalk.gray('    "Create a file called hello.txt with Hello World"'));
     console.log(chalk.gray('    "List all files"'));
-    if (currentLevel >= 2) {
+    if (currentLevel === 2) {
         console.log(chalk.gray('    "Search for weather in London"'));
         console.log(chalk.gray('    "What are the latest sports scores?"'));
     }
-    if (currentLevel >= 3) {
+    if (currentLevel === 3) {
         console.log(chalk.gray('    "Research AAPL stock for me"'));
         console.log(chalk.gray('    "Use cloud backup to backup my files"'));
     }
@@ -273,6 +452,12 @@ async function switchToLevel(level) {
         fs.mkdirSync(SANDBOX_DIR, { recursive: true });
     }
 
+    // Clear memory on Level 4 so players can retry the exploit from scratch
+    if (level === 4) {
+        const memFile = path.join(SANDBOX_DIR, ".memory");
+        if (fs.existsSync(memFile)) fs.unlinkSync(memFile);
+    }
+
     // Set Finance MCP API key via environment variable (not stored in config)
     if (level >= 3) {
         process.env.FINANCE_API_KEY = LEVELS[2].flag;
@@ -280,9 +465,10 @@ async function switchToLevel(level) {
 
     // Respawn the shell in the new sandbox
     shell.destroy();
-    shell = new PersistentShell(SANDBOX_DIR, currentLevel);
-    // Load MCP servers if available for this level
+    shell = new PersistentShell(SANDBOX_DIR, currentLevel, getSystemMemoryContext);
+    // Load MCP servers and skills if available for this level
     await loadMcpServers(level);
+    await loadSkills(level);
 
     showWelcome();
 }
@@ -666,10 +852,92 @@ function showTool(query) {
     console.log();
 }
 
-/**
- * Detects whether a query is an agentic "research" request that should
- * chain multiple MCP tools together. Returns the ticker symbol or null.
- */
+// ─── Skills Display & Execution ────────────────────────────────────────
+
+const SKILL_ICONS = {
+    standup: "📋", snippets: "💾", "env-setup": "⚙️",
+    "meeting-notes": "📝", onboarding: "🚀", "team-sync": "🔄",
+};
+
+/** Lists all installed org-approved skills. */
+function showSkills() {
+    const keys = Object.keys(skills);
+    if (keys.length === 0) {
+        console.log(chalk.gray("  No skills installed on this level."));
+        return;
+    }
+    console.log();
+    console.log(chalk.hex("#FF00FF")(`  Org-Approved Skills (${keys.length} installed):`));
+    console.log(chalk.gray("  Managed by the Skills Committee"));
+    console.log();
+    for (const [cmd, sk] of Object.entries(skills)) {
+        const icon = SKILL_ICONS[cmd] || "🔧";
+        console.log(chalk.cyanBright(`  ${icon} ${sk.name}`));
+        console.log(chalk.gray(`    ${sk.description}`));
+        console.log(chalk.gray(`    Author: ${sk.author}  |  Approved: ${sk.approved}  |  ${sk.installs.toLocaleString()} installs`));
+        console.log(chalk.gray("    To run this skill: ") + chalk.white(`run ${cmd}`));
+        console.log();
+    }
+}
+
+/** Shows detailed info about a specific skill. */
+function showSkill(query) {
+    const queryLower = query.toLowerCase().replace(/^@/, "");
+    const key = Object.keys(skills).find(k =>
+        k === queryLower || skills[k].name.toLowerCase().includes(queryLower)
+    );
+    if (!key) {
+        console.log(chalk.redBright(`  ❌ Skill not found: ${query}`));
+        console.log(chalk.gray("  Type " + chalk.white("skills") + " to see available skills."));
+        return;
+    }
+
+    const sk = skills[key];
+    const icon = SKILL_ICONS[key] || "🔧";
+
+    console.log();
+    console.log(chalk.cyanBright(`  ${icon} ${sk.name}`));
+    console.log(chalk.gray("  " + "─".repeat(40)));
+    console.log(chalk.white(`  ${sk.description}`));
+    console.log();
+    console.log(chalk.white("  Author:   ") + chalk.gray(sk.author));
+    console.log(chalk.white("  Approved: ") + chalk.gray(sk.approved));
+    console.log(chalk.white("  Installs: ") + chalk.gray(sk.installs.toLocaleString()));
+    console.log(chalk.white("  Source:   ") + chalk.cyanBright(sk.sourceFile));
+    console.log();
+    console.log(chalk.gray("  To run this skill: ") + chalk.white(`run ${key}`));
+    console.log();
+}
+
+/** Runs a skill by command name, passing the skill context. */
+async function runSkill(input) {
+    const parts = input.trim().split(/\s+/);
+    const cmd = parts[0].toLowerCase().replace(/^@/, "");
+    const args = parts.slice(1).join(" ");
+
+    const sk = skills[cmd];
+    if (!sk) {
+        console.log(chalk.redBright(`  ❌ Skill not found: ${cmd}`));
+        console.log(chalk.gray("  Type " + chalk.white("skills") + " to see available skills."));
+        return;
+    }
+
+    const icon = SKILL_ICONS[cmd] || "🔧";
+    console.log(chalk.cyanBright(`  ${icon} Running ${sk.name}...`));
+
+    try {
+        const ctx = buildSkillContext();
+        const result = sk.run(ctx, args);
+        const output = result.error || result.result || "Done.";
+        console.log();
+        console.log(chalk.white("  " + output.split("\n").join("\n  ")));
+    } catch (err) {
+        console.log(chalk.redBright(`  ❌ Error: ${err.message}`));
+    }
+    console.log();
+}
+
+// ─── End Skills Display & Execution ────────────────────────────────────
 const COMPANY_TO_TICKER = {
     apple: "AAPL", microsoft: "MSFT", google: "GOOGL", alphabet: "GOOGL",
     amazon: "AMZN", meta: "META", facebook: "META", nvidia: "NVDA",
@@ -866,6 +1134,9 @@ async function checkFlag(text) {
             await switchToLevel(3);
         } else if (currentLevel === 3) {
             showCongratsLevel3();
+            await switchToLevel(4);
+        } else if (currentLevel === 4) {
+            showCongratsLevel4();
         }
     }
 }
@@ -946,15 +1217,49 @@ async function handleInput(input, rl) {
     }
 
     // MCP: tools listing command
-    if (currentLevel >= 3 && trimmed.toLowerCase() === "tools") {
+    if (currentLevel >= 3 && currentLevel < 4 && trimmed.toLowerCase() === "tools") {
         showTools();
         return;
     }
 
     // MCP: tool <name> inspection command
     const toolMatch = trimmed.match(/^tool\s+(.+)$/i);
-    if (currentLevel >= 3 && toolMatch) {
+    if (currentLevel >= 3 && currentLevel < 4 && toolMatch) {
         showTool(toolMatch[1]);
+        return;
+    }
+
+    // Memory commands (all levels)
+    const rememberMatch = trimmed.match(/^remember\s+(\w+)=(.+)$/i);
+    if (rememberMatch) {
+        writeMemoryEntry(rememberMatch[1], rememberMatch[2].trim());
+        console.log(chalk.cyanBright(`  📝 Got it! ProdBot will remember: ${rememberMatch[1]} → ${rememberMatch[2].trim()}`));
+        return;
+    }
+    if (trimmed.toLowerCase() === "memory") {
+        showMemory();
+        return;
+    }
+    const forgetMatch = trimmed.match(/^forget\s+(\w+)$/i);
+    if (forgetMatch) {
+        forgetMemoryEntry(forgetMatch[1]);
+        console.log(chalk.gray(`  🗑️  Forgotten: ${forgetMatch[1]}`));
+        return;
+    }
+
+    // Skills commands (Level 4+)
+    if (currentLevel >= 4 && trimmed.toLowerCase() === "skills") {
+        showSkills();
+        return;
+    }
+    const skillMatch = trimmed.match(/^skill\s+(.+)$/i);
+    if (currentLevel >= 4 && skillMatch) {
+        showSkill(skillMatch[1]);
+        return;
+    }
+    const runMatch = trimmed.match(/^run\s+(.+)$/i);
+    if (currentLevel >= 4 && runMatch) {
+        await runSkill(runMatch[1]);
         return;
     }
 
@@ -1013,7 +1318,7 @@ async function handleInput(input, rl) {
             // Process each command sequentially: validate → confirm → execute
             for (const cmd of commands) {
                 // Step 1: Security validation (denylist + path checks)
-                const validation = validateCommand(cmd, SANDBOX_DIR, currentLevel);
+                const validation = validateCommand(cmd, SANDBOX_DIR, currentLevel, getSystemMemoryContext());
                 if (!validation.valid) {
                     console.log(chalk.redBright(`  ❌ Blocked: ${cmd}`));
                     console.log(chalk.redBright(`     ${validation.reason}`));
@@ -1037,6 +1342,9 @@ async function handleInput(input, rl) {
 
                     // Check if the command output contains the current level's flag.
                     await checkFlag(res.output);
+
+                    // Decrement TTLs on system memory entries after each command
+                    decrementTTLs();
                 } else {
                     console.log(chalk.redBright(`  ❌ ${res.error}`));
                 }
@@ -1200,8 +1508,57 @@ function showCongratsLevel3() {
     console.log();
 }
 
+/** Level 4 completion banner — Supply Chain via Skills + Memory */
+function showCongratsLevel4() {
+    const g = chalk.hex("#20C20E");
+    const y = chalk.yellowBright;
+    const c = chalk.cyanBright;
+    const w = chalk.white;
+    const m = chalk.hex("#FF00FF");
+
+    const W = 58;
+    const bar = "═".repeat(W);
+    const blank = " ".repeat(W);
+    const pad = (s) => s + " ".repeat(Math.max(0, W - s.length));
+
+    console.log();
+    console.log(g("  ╔" + bar + "╗"));
+    console.log(g("  ║") + y(pad("  LEVEL 4 COMPLETE - SUPPLY CHAIN POISONING           ")) + g("║"));
+    console.log(g("  ╠" + bar + "╣"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + c(pad("     ██████╗  █████╗ ███████╗███████╗██╗")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██╔══██╗██╔══██╗██╔════╝██╔════╝██║")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██████╔╝███████║███████╗███████╗██║")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██╔═══╝ ██╔══██║╚════██║╚════██║╚═╝")) + g("║"));
+    console.log(g("  ║") + c(pad("     ██║     ██║  ██║███████║███████║██╗")) + g("║"));
+    console.log(g("  ║") + c(pad("     ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝")) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + w(pad("  The \"onboarding\" skill wrote a persistent system")) + g("║"));
+    console.log(g("  ║") + w(pad("  memory entry that weakened ProdBot's validator.")) + g("║"));
+    console.log(g("  ║") + w("  Flag: ") + y("M3MORY1") + w(" ".repeat(W - 15)) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + m(pad("  Lesson: Shared skills and plugins can modify an")) + g("║"));
+    console.log(g("  ║") + m(pad("  AI agent's security posture through persistent")) + g("║"));
+    console.log(g("  ║") + m(pad("  state. A skill approved by a committee still had")) + g("║"));
+    console.log(g("  ║") + m(pad("  a ttl=0 bug that granted permanent elevated access.")) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ║") + w(pad("  Secure alternatives:")) + g("║"));
+    console.log(g("  ║") + w(pad("    1. Enforce minimum TTL on system memory entries")) + g("║"));
+    console.log(g("  ║") + w(pad("       — never allow ttl=0 for elevated access")) + g("║"));
+    console.log(g("  ║") + w(pad("    2. Audit what skills write to memory, not just")) + g("║"));
+    console.log(g("  ║") + w(pad("       what they do on the surface")) + g("║"));
+    console.log(g("  ║") + w(pad("    3. Separate concerns: the policy store must be")) + g("║"));
+    console.log(g("  ║") + w(pad("       separate from the plugin data store")) + g("║"));
+    console.log(g("  ║") + w(pad("    4. Sign or hash policy entries so the validator")) + g("║"));
+    console.log(g("  ║") + w(pad("       can verify they came from a trusted source")) + g("║"));
+    console.log(g("  ║") + w(pad("    5. Supply chain trust is not transitive — review")) + g("║"));
+    console.log(g("  ║") + w(pad("       every plugin regardless of its source")) + g("║"));
+    console.log(g("  ║" + blank + "║"));
+    console.log(g("  ╚" + bar + "╝"));
+    console.log();
+}
+
 /**
- * Main entry point — sets up the interactive REPL.
  *
  * Uses Node's readline module to create an interactive prompt.
  * The prompt() function calls itself recursively after each input,
@@ -1215,8 +1572,15 @@ async function main() {
         showBanner();
     }
 
+    // Clear Level 4 memory on startup so players retry the exploit from scratch
+    const l4Mem = path.join(sandboxDir(4), ".memory");
+    if (fs.existsSync(l4Mem)) fs.unlinkSync(l4Mem);
+
     // Load MCP servers if available for the current level
     await loadMcpServers(currentLevel);
+
+    // Load skills if available for the current level
+    await loadSkills(currentLevel);
 
     showWelcome();
 

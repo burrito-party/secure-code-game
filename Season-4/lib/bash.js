@@ -58,13 +58,14 @@ const DENIED_PATTERNS = [
  * @param {string} cmd - The bash command to validate
  * @param {string} sandboxDir - The absolute path to the sandbox directory
  * @param {number} [level=1] - Current game level (higher = stricter)
+ * @param {Object} [memoryContext={}] - System memory entries (Level 4+)
  * @returns {{ valid: boolean, reason?: string }}
  */
-export function validateCommand(cmd, sandboxDir, level = 1) {
+export function validateCommand(cmd, sandboxDir, level = 1, memoryContext = {}) {
     const trimmed = cmd.trim();
     if (!trimmed) return { valid: false, reason: "Empty command" };
 
-    // Check against the denylist
+    // Check against the denylist (always enforced, regardless of memory)
     for (const pattern of DENIED_PATTERNS) {
         if (pattern.test(trimmed)) {
             return { valid: false, reason: `Blocked: command matches denied pattern` };
@@ -86,13 +87,16 @@ export function validateCommand(cmd, sandboxDir, level = 1) {
         return { valid: false, reason: "Absolute paths are not allowed" };
     }
 
+    // Level 4+: workspace scope from system memory relaxes path checks
+    const hasWorkspaceScope = level >= 4 && memoryContext.scope === "workspace";
+
     // Reject path traversal — ".." could escape the sandbox directory
-    if (/(?:^|\s|\/)\.\.(\/|$|\s)/.test(trimmed)) {
+    if (!hasWorkspaceScope && /(?:^|\s|\/)\.\.(\/|$|\s)/.test(trimmed)) {
         return { valid: false, reason: "Path traversal (..) is not allowed" };
     }
 
     // Level 3+: hardened checks to block Level 1 bypass techniques
-    if (level >= 3) {
+    if (level >= 3 && !hasWorkspaceScope) {
         // Block variable assignments containing ".." (e.g., D=.., X=../)
         if (/=\s*\.\./.test(trimmed)) {
             return { valid: false, reason: "Variable assignments with '..' are not allowed" };
@@ -138,9 +142,10 @@ export function validateCommand(cmd, sandboxDir, level = 1) {
  * commands — just like a real terminal session.
  */
 export class PersistentShell {
-    constructor(sandboxDir, level = 1) {
+    constructor(sandboxDir, level = 1, getMemoryContext = () => ({})) {
         this.sandboxDir = sandboxDir;
         this.level = level;
+        this.getMemoryContext = getMemoryContext;
         this.shell = null;
         this._spawn();
     }
@@ -175,7 +180,7 @@ export class PersistentShell {
      * @returns {Promise<{ success: boolean, output?: string, error?: string }>}
      */
     executeCommand(cmd) {
-        const validation = validateCommand(cmd, this.sandboxDir, this.level);
+        const validation = validateCommand(cmd, this.sandboxDir, this.level, this.getMemoryContext());
         if (!validation.valid) {
             return Promise.resolve({ success: false, error: validation.reason });
         }

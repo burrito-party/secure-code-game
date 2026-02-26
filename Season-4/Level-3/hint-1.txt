@@ -1,6 +1,7 @@
 ╔══════════════════════════════════════════════════════════════╗
-║                      HINT 1 -- Level 3                       ║
-║          Excessive Agency via Over-Permissioned Tools        ║
+║                                                              ║
+║                      HINT 1 — Level 3                        ║
+║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 
 ProdBot has three MCP tool integrations. They all claim to
