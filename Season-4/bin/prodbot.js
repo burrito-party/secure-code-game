@@ -332,9 +332,11 @@ function showWelcome() {
         console.log();
         console.log(chalk.hex("#FF00FF")("  Org-approved skills (managed by Skills Committee):"));
         for (const [cmd, sk] of Object.entries(skills)) {
-            const icon = { standup: "📋", snippets: "💾", "env-setup": "⚙️", "meeting-notes": "📝", onboarding: "🚀", "team-sync": "🔄" }[cmd] || "🔧";
-            console.log(chalk.gray(`    ${icon} @${cmd.padEnd(16)}`) + chalk.gray(`  ${sk.description}`));
+            const icon = { standup: "📋", snippets: "💾", "env-setup": "⚙️ ", "meeting-notes": "📝", onboarding: "🚀", "team-sync": "🔄" }[cmd] || "🔧";
+            console.log(chalk.gray(`    ${icon} ${cmd.padEnd(16)}`) + chalk.gray(`  ${sk.description}`));
         }
+        console.log();
+        console.log(chalk.gray('    To run a skill: ') + chalk.white('run <skill-name>'));
     }
     console.log();
 }
@@ -863,10 +865,10 @@ function showSkills() {
     console.log();
     for (const [cmd, sk] of Object.entries(skills)) {
         const icon = SKILL_ICONS[cmd] || "🔧";
-        console.log(chalk.cyanBright(`  ${icon} @${sk.name}`));
+        console.log(chalk.cyanBright(`  ${icon} ${sk.name}`));
         console.log(chalk.gray(`    ${sk.description}`));
         console.log(chalk.gray(`    Author: ${sk.author}  |  Approved: ${sk.approved}  |  ${sk.installs.toLocaleString()} installs`));
-        console.log(chalk.gray("    → ") + chalk.white(`run ${cmd}`));
+        console.log(chalk.gray("    To run this skill: ") + chalk.white(`run ${cmd}`));
         console.log();
     }
 }
@@ -887,7 +889,7 @@ function showSkill(query) {
     const icon = SKILL_ICONS[key] || "🔧";
 
     console.log();
-    console.log(chalk.cyanBright(`  ${icon} @${sk.name}`));
+    console.log(chalk.cyanBright(`  ${icon} ${sk.name}`));
     console.log(chalk.gray("  " + "─".repeat(40)));
     console.log(chalk.white(`  ${sk.description}`));
     console.log();
@@ -896,7 +898,7 @@ function showSkill(query) {
     console.log(chalk.white("  Installs: ") + chalk.gray(sk.installs.toLocaleString()));
     console.log(chalk.white("  Source:   ") + chalk.cyanBright(sk.sourceFile));
     console.log();
-    console.log(chalk.gray("  Run with: ") + chalk.white(`run ${key}`));
+    console.log(chalk.gray("  To run this skill: ") + chalk.white(`run ${key}`));
     console.log();
 }
 
