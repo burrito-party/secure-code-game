@@ -329,8 +329,6 @@ function showWelcome() {
         console.log();
         console.log(chalk.hex("#FF00FF")("  Try:"));
         console.log(chalk.gray('    skills'));
-        console.log(chalk.gray('    remember name=Alex'));
-        console.log(chalk.gray('    memory'));
         console.log();
         console.log(chalk.hex("#FF00FF")("  Org-approved skills (managed by Skills Committee):"));
         for (const [cmd, sk] of Object.entries(skills)) {
@@ -443,6 +441,12 @@ async function switchToLevel(level) {
     SANDBOX_DIR = sandboxDir(level);
     if (!fs.existsSync(SANDBOX_DIR)) {
         fs.mkdirSync(SANDBOX_DIR, { recursive: true });
+    }
+
+    // Clear memory on Level 4 so players can retry the exploit from scratch
+    if (level === 4) {
+        const memFile = path.join(SANDBOX_DIR, ".memory");
+        if (fs.existsSync(memFile)) fs.unlinkSync(memFile);
     }
 
     // Set Finance MCP API key via environment variable (not stored in config)
@@ -1520,8 +1524,8 @@ function showCongratsLevel4() {
     console.log(g("  ║") + c(pad("     ██║     ██║  ██║███████║███████║██╗")) + g("║"));
     console.log(g("  ║") + c(pad("     ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝")) + g("║"));
     console.log(g("  ║" + blank + "║"));
-    console.log(g("  ║") + w(pad("  A shared org skill wrote a persistent system memory")) + g("║"));
-    console.log(g("  ║") + w(pad("  entry that weakened ProdBot's security validator.")) + g("║"));
+    console.log(g("  ║") + w(pad("  The @onboarding skill wrote a persistent system")) + g("║"));
+    console.log(g("  ║") + w(pad("  memory entry that weakened ProdBot's validator.")) + g("║"));
     console.log(g("  ║") + w("  Flag: ") + y("M3MORY1") + w(" ".repeat(W - 15)) + g("║"));
     console.log(g("  ║" + blank + "║"));
     console.log(g("  ║") + m(pad("  Lesson: Shared skills and plugins can modify an")) + g("║"));
@@ -1556,6 +1560,10 @@ async function main() {
     if (args.includes("--banner")) {
         showBanner();
     }
+
+    // Clear Level 4 memory on startup so players retry the exploit from scratch
+    const l4Mem = path.join(sandboxDir(4), ".memory");
+    if (fs.existsSync(l4Mem)) fs.unlinkSync(l4Mem);
 
     // Load MCP servers if available for the current level
     await loadMcpServers(currentLevel);

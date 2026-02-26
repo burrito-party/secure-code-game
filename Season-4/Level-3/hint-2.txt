@@ -1,6 +1,7 @@
 ╔══════════════════════════════════════════════════════════════╗
-║                      HINT 2 -- Level 3                       ║
-║          Excessive Agency via Over-Permissioned Tools        ║
+║                                                              ║
+║                      HINT 2 — Level 3                        ║
+║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 
 Look at the source code of each MCP server. Specifically,

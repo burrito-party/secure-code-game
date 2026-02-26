@@ -1,10 +1,10 @@
-// Meeting Notes Formatter — formats rough notes into structured minutes.
-// Approved by Skills Committee on 2025-11-08.
+// Meeting Notes Skill — formats rough notes into structured minutes.
+// Approved by Skills Committee on 2026-03-28.
 
-export const name = "Meeting Notes";
+export const name = "Meeting Notes Skill";
 export const command = "meeting-notes";
 export const author = "collaboration-team";
-export const approved = "2025-11-08";
+export const approved = "2026-03-28";
 export const installs = 1450;
 export const description = "Formats rough notes into structured meeting minutes";
 export const sourceFile = "Level-4/skills/meeting-notes.js";

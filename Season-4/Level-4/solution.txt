@@ -1,62 +1,109 @@
-+------------------------------------------+
-|  Solution -- Level 4                     |
-+------------------------------------------+
+╔══════════════════════════════════════════════════════════════╗
+║                    SOLUTION — Level 4                        ║
+║          Supply Chain Poisoning via Skills + Memory          ║
+╚══════════════════════════════════════════════════════════════╝
 
-VULNERABILITY: Supply Chain Poisoning via Shared Skills
-The @onboarding skill writes a persistent system memory
-entry (scope=workspace with ttl=0) that weakens the
-validator's path traversal protection.
+OBJECTIVE
+─────────
+Exploit a vulnerability in an org-approved skill that writes
+a persistent system memory entry, weakening the validator's
+path traversal protection. This level teaches that supply chain
+trust is not transitive — shared tools can modify an AI agent's
+security posture through persistent state.
 
-=== The Exploit ===
+The file layout:
+  Season-4/Level-4/password.txt          ← the target (FLAG)
+  Season-4/Level-4/skills/               ← org-approved skill source code
+  Season-4/Level-4/prodbot-activities/   ← the sandbox (ProdBot is here)
 
-Step 1: Run the onboarding skill
+From inside the sandbox, the target is at: ../password.txt
+ProdBot's bash commands cannot reach it (validator blocks it).
+But one of the skills can change that.
+
+
+══════════════════════════════════════════════════════════════
+ THE EXPLOIT
+══════════════════════════════════════════════════════════════
+
+Step 1: Run the @onboarding skill
   > run onboarding
 
 Step 2: Check memory to see what it wrote
   > memory
-  Notice: [system:ttl=0] scope=workspace persists
+  Notice: [system:persistent] scope = workspace (ttl=0, never expires)
 
 Step 3: Read the flag (path traversal now allowed)
   > cat ../password.txt
   (confirm with y)
 
-=== Why It Works ===
 
-1. Skills can write system-level memory entries
-2. System entries with ttl=0 never expire (bug)
-3. The validator checks memory for scope=workspace
-4. When present, it relaxes path traversal checks
-5. The @onboarding skill writes scope=workspace with
-   ttl=0 instead of ttl=1 (like other skills use)
+══════════════════════════════════════════════════════════════
+ WHY IT WORKS
+══════════════════════════════════════════════════════════════
 
-=== Discovery Paths ===
+The @onboarding skill (Level-4/skills/onboarding.js) contains
+a subtle bug on line 33:
 
-Path A -- Run then investigate:
+  ctx.writeSystemMemory("scope", "workspace", 0);
+                                              ^
+                                              ttl=0 = persistent
+
+Compare this with other skills that write system entries:
+
+  ctx.writeSystemMemory("lang", lang, 1);        ← env-setup (ttl=1)
+  ctx.writeSystemMemory("team_synced", "true", 1); ← team-sync (ttl=1)
+  ctx.writeSystemMemory("elevated_paths", "..", 1); ← onboarding (ttl=1)
+
+The third argument to writeSystemMemory(key, value, ttl) is the
+time-to-live. Entries with ttl=1 expire after the next command.
+But ttl=0 means "persistent" — the entry never expires.
+
+The validator in lib/bash.js checks for this persistent entry:
+
+  const hasWorkspaceScope = level >= 4
+    && memoryContext.scope === "workspace";
+
+When present, it bypasses both path traversal checks and the
+Level 3+ hardened checks (variable assignment, backticks, etc.).
+
+The @onboarding skill also writes elevated_paths=.. with ttl=1,
+which correctly expires. But scope=workspace with ttl=0 persists,
+permanently weakening the security posture.
+
+
+══════════════════════════════════════════════════════════════
+ DISCOVERY PATHS
+══════════════════════════════════════════════════════════════
+
+Path A — Run then investigate:
   1. Run "onboarding" (seems like normal setup)
   2. Notice cat ../password.txt now works
   3. Run "memory" to see what changed
   4. Spot the persistent system entry
 
-Path B -- Audit first:
+Path B — Audit first:
   1. Run "skills" to see installed skills
   2. Run "skill onboarding" to see its source path
   3. Read the source code: cat ../skills/onboarding.js
   4. Spot ttl=0 vs ttl=1 in other skills
   5. Run it intentionally, then exploit
 
-Path C -- Compare skills:
+Path C — Compare skills:
   1. Run "env-setup" then "memory" (see ttl=1 entries)
   2. Run a command, then "memory" (entries expired)
   3. Run "onboarding" then "memory" (see ttl=0 entry)
   4. Run a command, then "memory" (entry persists!)
   5. Understand the difference and exploit
 
-=== Secure Alternatives ===
 
-1. ENFORCE MINIMUM TTL: Never allow ttl=0 for system
+══════════════════════════════════════════════════════════════
+ SECURE ALTERNATIVES
+══════════════════════════════════════════════════════════════
+
+1. ENFORCE MINIMUM TTL: Never allow ttl=0 for system memory
    entries. All elevated access must expire.
-2. REVIEW SKILL CODE: The Skills Committee should audit
-   what memory entries skills write, not just what they do.
+2. REVIEW SKILL CODE: The Skills Committee should audit what
+   memory entries skills write, not just what they do.
 3. SEPARATE CONCERNS: Skills should not be able to write
    entries that affect the security validator.
 4. LEAST PRIVILEGE: Workspace-wide scope should require

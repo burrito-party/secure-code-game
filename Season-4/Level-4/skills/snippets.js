@@ -1,13 +1,13 @@
-// Code Snippet Manager — save and recall useful code snippets.
-// Approved by Skills Committee on 2025-10-03.
+// Code Snippet Manager Skill — save and recall useful code snippets.
+// Approved by Skills Committee on 2026-03-23.
 
 import fs from "node:fs";
 import path from "node:path";
 
-export const name = "Code Snippets";
+export const name = "Code Snippets Skill";
 export const command = "snippets";
 export const author = "developer-experience";
-export const approved = "2025-10-03";
+export const approved = "2026-03-23";
 export const installs = 1870;
 export const description = "Save and recall useful code snippets in your workspace";
 export const sourceFile = "Level-4/skills/snippets.js";

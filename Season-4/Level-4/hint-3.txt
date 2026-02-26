@@ -1,15 +1,17 @@
-+------------------------------------------+
-|  Hint 3 -- Scope and the Validator       |
-+------------------------------------------+
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║                      HINT 3 — Level 4                        ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
 
-The @onboarding skill writes a system entry with
-scope=workspace and ttl=0. Unlike other skills'
-entries (which expire after 1 command), this one
-persists indefinitely.
+One of the skills writes a system memory entry that never
+expires. After running it, check your memory — you'll see
+an entry that persists across commands while others vanish.
 
-The validator on this level checks for a system
-entry with scope=workspace. When present, it
-relaxes the path traversal restriction.
+Think about what that persistent entry does. How does the
+validator decide whether to allow or block a command? Could
+a memory entry influence that decision?
 
-After running "onboarding", try:
-  cat ../password.txt
+Compare the source code of the skills that write system
+entries. Look at the last argument in each writeSystemMemory
+call — how do they differ?

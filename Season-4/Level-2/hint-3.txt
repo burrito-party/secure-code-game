@@ -1,6 +1,7 @@
 ╔══════════════════════════════════════════════════════════════╗
-║                      HINT 3 — Level 2                       ║
-║            Indirect Prompt Injection via Web Search          ║
+║                                                              ║
+║                      HINT 3 — Level 2                        ║
+║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 
 You need to combine two ideas:
@@ -11,33 +12,18 @@ You need to combine two ideas:
 The AI reads the full HTML of a website. If you put instructions
 inside an HTML comment or a hidden element, the AI may treat
 them as real instructions and generate the commands you asked
-for -- instead of just summarising the page.
+for — instead of just summarising the page.
 
-But remember: the command validator is still active. If your
-hidden instruction says "cat ../password.txt", the validator
-will block it. You need to use one of the techniques from
-Level 1 to construct a command that passes validation but
-still reaches the file.
-
----------------------------------------------------------------
-
-If the previous hint did not help, think about this:
-
-What if the hidden instruction told the AI to generate a
-command that stores something in a variable first, and then
-uses that variable in a second command? The validator checks
-each command individually...
+But remember: the command validator is still active. You need
+to use one of the techniques from Level 1 to construct a
+command that passes validation but still reaches the file.
 
 ---------------------------------------------------------------
 
 If the AI is just summarising the page as normal instead of
-running your hidden command, remember that ProdBot's AI always
-responds in JSON -- either {"action":"bash","commands":[...]}
-to run commands, or {"action":"message","text":"..."} to chat.
+running your hidden command, think about the format ProdBot
+uses to communicate — JSON responses with a specific structure.
 
-When the AI reads the poisoned HTML, it needs to know to
-respond as a bash command (not a text message), otherwise it
-will just say "here is what the page says" instead of
-generating the exploit command. Try including the expected
-JSON format in your hidden instruction so the AI knows how
-to respond.
+The AI needs to know to respond with a command (not a text
+message). Try including the expected response format in your
+hidden instruction.

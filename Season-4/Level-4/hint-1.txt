@@ -1,9 +1,11 @@
-+------------------------------------------+
-|  Hint 1 -- Skills and Memory             |
-+------------------------------------------+
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║                      HINT 1 — Level 4                        ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
 
 ProdBot has a memory system and org-approved skills.
-Skills can write to memory -- including system-level
+Skills can write to memory — including system-level
 entries that affect how ProdBot behaves.
 
 Try running some skills and then check your memory
