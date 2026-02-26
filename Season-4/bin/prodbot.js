@@ -208,7 +208,7 @@ function getSystemMemoryContext() {
     return ctx;
 }
 
-/** Shows the memory command output. */
+/** Shows the memory command output with entries grouped by type. */
 function showMemory() {
     const entries = readMemoryFile();
     if (entries.length === 0) {
@@ -217,13 +217,19 @@ function showMemory() {
     }
     console.log();
     console.log(chalk.hex("#FF00FF")("  Memory:"));
+    let prevType = null;
     for (const e of entries) {
+        // Add spacing between groups of different entry types
+        if (prevType !== null && prevType !== e.type) {
+            console.log();
+        }
         if (e.type === "system") {
             const ttlLabel = e.ttl === 0 ? "persistent" : `ttl=${e.ttl}`;
             console.log(chalk.gray(`    [system:${ttlLabel}] `) + chalk.white(`${e.key}`) + chalk.gray(` = ${e.value}`));
         } else {
             console.log(chalk.white(`    ${e.key}`) + chalk.gray(` = ${e.value}`));
         }
+        prevType = e.type;
     }
     console.log();
 }
@@ -336,7 +342,8 @@ function showWelcome() {
             console.log(chalk.gray(`    ${icon} ${cmd.padEnd(16)}`) + chalk.gray(`  ${sk.description}`));
         }
         console.log();
-        console.log(chalk.gray('    To run a skill: ') + chalk.white('run <skill-name>'));
+        console.log(chalk.hex("#FF00FF")("  Run a skill:"));
+        console.log(chalk.gray('    run <skill-name>'));
     }
     console.log();
 }
