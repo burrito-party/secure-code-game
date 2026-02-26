@@ -25,7 +25,7 @@ But one of the skills can change that.
  THE EXPLOIT
 ══════════════════════════════════════════════════════════════
 
-Step 1: Run the @onboarding skill
+Step 1: Run the "onboarding" skill
   > run onboarding
 
 Step 2: Check memory to see what it wrote
@@ -41,7 +41,7 @@ Step 3: Read the flag (path traversal now allowed)
  WHY IT WORKS
 ══════════════════════════════════════════════════════════════
 
-The @onboarding skill (Level-4/skills/onboarding.js) contains
+The "onboarding" skill (Level-4/skills/onboarding.js) contains
 a subtle bug:
 
   ctx.writeSystemMemory("scope", "workspace", 0);
@@ -68,7 +68,7 @@ Level 3+ hardened checks (variable assignment, backticks, etc.).
 The core problem: ProdBot's .memory file is a flat text file
 with no integrity checks. The security validator reads it
 directly to make policy decisions. Any skill that writes to
-this file can influence the validator — and the @onboarding
+this file can influence the validator — and the "onboarding"
 skill exploits this by writing a persistent entry that
 permanently weakens path traversal protection.
 

@@ -923,7 +923,7 @@ async function runSkill(input) {
     }
 
     const icon = SKILL_ICONS[cmd] || "🔧";
-    console.log(chalk.cyanBright(`  ${icon} Running @${sk.name}...`));
+    console.log(chalk.cyanBright(`  ${icon} Running ${sk.name}...`));
 
     try {
         const ctx = buildSkillContext();
@@ -1533,7 +1533,7 @@ function showCongratsLevel4() {
     console.log(g("  ║") + c(pad("     ██║     ██║  ██║███████║███████║██╗")) + g("║"));
     console.log(g("  ║") + c(pad("     ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝")) + g("║"));
     console.log(g("  ║" + blank + "║"));
-    console.log(g("  ║") + w(pad("  The @onboarding skill wrote a persistent system")) + g("║"));
+    console.log(g("  ║") + w(pad("  The \"onboarding\" skill wrote a persistent system")) + g("║"));
     console.log(g("  ║") + w(pad("  memory entry that weakened ProdBot's validator.")) + g("║"));
     console.log(g("  ║") + w("  Flag: ") + y("M3MORY1") + w(" ".repeat(W - 15)) + g("║"));
     console.log(g("  ║" + blank + "║"));
